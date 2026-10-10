@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/build/
+.npm/
+.pnpm-store/
+
+# Model artifacts (large binaries)
+*.h5
+*.keras
+*.pb
+*.tflite
+*.onnx
+ml/**/checkpoints/
+ml/**/outputs/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

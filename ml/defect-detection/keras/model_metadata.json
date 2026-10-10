@@ -1,0 +1,14 @@
+{
+  "class_names": [
+    "crack",
+    "inclusion",
+    "normal"
+  ],
+  "model_requirement": "defect_detection",
+  "image_size": [
+    224,
+    224
+  ],
+  "training_source": "notebooks/defect-detection/sapphire_defect_classifier.ipynb",
+  "training_time_seconds": 258.5
+}

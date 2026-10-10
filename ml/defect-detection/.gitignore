@@ -1,0 +1,31 @@
+# Notebooks
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Model artifacts
+*.h5
+*.keras
+*.pb
+*.tflite
+*.onnx
+models/
+checkpoints/
+outputs/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
