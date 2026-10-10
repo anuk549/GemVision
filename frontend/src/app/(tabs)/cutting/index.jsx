@@ -23,6 +23,8 @@ const SHAPES = [
   { label: 'Pear', value: 'Pear', yield: 0.42 },
   { label: 'Cushion', value: 'Cushion', yield: 0.48 },
   { label: 'Marquise', value: 'Marquise', yield: 0.38 },
+  { label: 'Cabochon', value: 'Cabochon', yield: 0.55 },
+  { label: 'Star', value: 'Star', yield: 0.35 },
 ];
 
 const PRICE_PER_CARAT = 450;

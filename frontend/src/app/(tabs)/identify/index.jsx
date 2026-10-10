@@ -17,13 +17,33 @@ import {
 import { colors, radius, spacing } from '../../../theme';
 
 const PAGE_SIZE = 4;
-const GEMS = ['Blue Sapphire', 'Yellow Sapphire', 'Ruby', 'Emerald', 'Amethyst', 'Topaz'];
-const HUES = ['Deep Blue', 'Golden Yellow', 'Crimson Red', 'Vivid Green', 'Violet', 'Sky Blue'];
+const GEMS = [
+  'Blue Sapphire',
+  'Yellow Sapphire',
+  'Star Sapphire',
+  'Ruby',
+  "Cat's Eye",
+  'Moonstone',
+  'Emerald',
+  'Spinel',
+  'Topaz',
+];
+const HUES = [
+  'Cornflower Blue',
+  'Royal Blue',
+  'Golden Yellow',
+  'Crimson Red',
+  'Honey',
+  'Milky White',
+  'Vivid Green',
+  'Soft Pink',
+  'Champagne',
+];
 
 const SEED = [
-  { id: '1', gem: 'Blue Sapphire', color: 'Deep Blue', carat: '2.41', confidence: 96 },
+  { id: '1', gem: 'Blue Sapphire', color: 'Cornflower Blue', carat: '2.41', confidence: 96 },
   { id: '2', gem: 'Ruby', color: 'Crimson Red', carat: '1.18', confidence: 91 },
-  { id: '3', gem: 'Emerald', color: 'Vivid Green', carat: '2.05', confidence: 88 },
+  { id: '3', gem: "Cat's Eye", color: 'Honey', carat: '2.05', confidence: 88 },
 ];
 
 const pick = (list) => list[Math.floor(Math.random() * list.length)];

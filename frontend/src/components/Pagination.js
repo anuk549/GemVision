@@ -98,7 +98,7 @@ function PageButton({ value, active, onPress }) {
     >
       <AppText
         variant="label"
-        color={active ? colors.white : colors.textMuted}
+        color={active ? colors.textOnAccent : colors.textMuted}
         weight={active ? '700' : '500'}
       >
         {value}

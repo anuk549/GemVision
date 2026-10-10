@@ -1,16 +1,16 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, shadow, spacing } from '../theme';
 import AppText from './AppText';
 import Icon from './Icon';
 
 const VARIANTS = {
-  primary: { background: colors.primary, border: colors.primary, text: colors.white },
+  primary: { background: colors.primary, border: colors.primary, text: colors.textOnAccent },
   secondary: { background: colors.surfaceAlt, border: colors.borderStrong, text: colors.text },
-  outline: { background: colors.transparent, border: colors.primary, text: colors.accent },
+  outline: { background: colors.transparent, border: colors.primary, text: colors.primary },
   ghost: { background: colors.transparent, border: colors.transparent, text: colors.textMuted },
   danger: { background: colors.danger, border: colors.danger, text: colors.white },
-  success: { background: colors.success, border: colors.success, text: colors.white },
+  success: { background: colors.success, border: colors.success, text: colors.textOnAccent },
 };
 
 const SIZES = {
@@ -53,6 +53,7 @@ export default function Button({
           opacity: isDisabled ? 0.55 : pressed ? 0.85 : 1,
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
+        variant === 'primary' && !isDisabled && shadow.card,
         style,
       ]}
       {...rest}

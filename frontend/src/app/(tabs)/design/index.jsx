@@ -32,7 +32,7 @@ const METALS = [
   { label: 'Silver', value: 'Silver' },
 ];
 
-const GEMS = ['Sapphire', 'Ruby', 'Emerald', 'Diamond', 'Amethyst'];
+const GEMS = ['Sapphire', 'Ruby', 'Cat\u2019s Eye', 'Moonstone', 'Spinel', 'Emerald', 'Amethyst'];
 
 export default function DesignScreen() {
   const [type, setType] = useState('Ring');

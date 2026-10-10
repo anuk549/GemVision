@@ -7,9 +7,9 @@ import { AppText, Card, Icon } from '../../components';
 import { colors, gradients, radius, shadow, spacing } from '../../theme';
 
 const STATS = [
-  { label: 'Identified', value: '128', icon: 'search-outline', color: colors.primary },
-  { label: 'Defects', value: '6', icon: 'warning-outline', color: colors.warning },
-  { label: 'Accuracy', value: '94%', icon: 'trending-up-outline', color: colors.success },
+  { label: 'Identified', value: '128', icon: 'search-outline', color: colors.sapphire },
+  { label: 'Defects', value: '6', icon: 'warning-outline', color: colors.ruby },
+  { label: 'Accuracy', value: '94%', icon: 'trending-up-outline', color: colors.emerald },
 ];
 
 const WORKSPACES = [
@@ -18,28 +18,28 @@ const WORKSPACES = [
     title: 'Gem Identification',
     subtitle: 'Recognise the gemstone type',
     icon: 'search-outline',
-    color: colors.primary,
+    color: colors.sapphire,
   },
   {
     route: '/detect',
     title: 'Defect Detection',
     subtitle: 'Find cracks & inclusions',
     icon: 'diamond-outline',
-    color: colors.accent,
+    color: colors.ruby,
   },
   {
     route: '/cutting',
     title: 'Gem Cutting',
     subtitle: 'Plan a cut & estimate yield',
     icon: 'cut-outline',
-    color: colors.warning,
+    color: colors.topaz,
   },
   {
     route: '/design',
     title: 'Jewelry Design',
     subtitle: 'Create a jewelry piece',
     icon: 'color-palette-outline',
-    color: colors.success,
+    color: colors.emerald,
   },
 ];
 
@@ -53,11 +53,13 @@ export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
+    <View style={styles.safe}>
+      <LinearGradient colors={gradients.background} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+        >
         <View style={styles.topbar}>
           <View>
             <AppText variant="caption" color={colors.textMuted}>
@@ -78,15 +80,15 @@ export default function HomeScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.hero}
           >
-            <Icon name="scan-outline" size={140} color="rgba(255,255,255,0.14)" style={styles.heroArt} />
+            <Icon name="scan-outline" size={140} color="rgba(255,255,255,0.12)" style={styles.heroArt} />
             <View style={styles.heroBadge}>
-              <Icon name="sparkles-outline" size={14} color={colors.white} />
-              <AppText variant="caption" color={colors.white}>AI powered</AppText>
+              <Icon name="sparkles-outline" size={14} color={colors.accent} />
+              <AppText variant="caption" weight="600" color={colors.accent}>Ceylon gem AI</AppText>
             </View>
             <AppText variant="h2" color={colors.white} style={styles.heroTitle}>
               Detect defects
             </AppText>
-            <AppText variant="body" color="rgba(255,255,255,0.85)" style={styles.heroText}>
+            <AppText variant="body" color="rgba(255,255,255,0.82)" style={styles.heroText}>
               Upload a gemstone photo to detect cracks, inclusions and clarity grade.
             </AppText>
             <Pressable
@@ -167,7 +169,8 @@ export default function HomeScreen() {
           ))}
         </Card>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -175,6 +178,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
   },
   content: {
     padding: spacing.lg,
@@ -224,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(233, 185, 73, 0.18)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.pill,
@@ -242,7 +248,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     alignSelf: 'flex-start',
-    backgroundColor: colors.white,
+    backgroundColor: colors.accent,
     paddingHorizontal: spacing.lg,
     height: 44,
     borderRadius: radius.pill,

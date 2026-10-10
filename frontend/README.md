@@ -107,14 +107,17 @@ import { colors, spacing, radius } from '../../components';
 
 ## 4. Design system (theme tokens)
 
-Dark, clean, mobile-first. Use tokens, never hard-coded hex values.
+Dark, clean, mobile-first. Use tokens, never hard-coded hex values. The palette
+is **Ceylon-gem inspired**: sapphire blue primary, Ceylon gold accent, with ruby,
+emerald, cat's-eye, topaz and amethyst gem hues.
 
 | Token group | Examples |
 |---|---|
-| `colors` | `background #1a1a2e`, `surface #1f2544`, `primary #3a7bd5`, `accent #00d2ff`, `text #fff`, `textMuted #8892b0`, `danger`, `success`, `warning`, `border`, `input` |
+| `colors` | `background #070B14`, `surface #111A2C`, `surfaceAlt #182238`, `primary/sapphire #3E7BFA`, `accent #E9B949` (Ceylon gold), `text #F3F7FF`, `textMuted #9DB0CC`, `textDim #5E7089`, `textOnAccent #0A0E17`, plus gem hues `ruby #E23D5C`, `emerald #25C08A`, `catsEye #C8A63C`, `topaz #E9A23B`, `amethyst #9B6BE0`, `moonstone #BFD4F2`, `aquamarine #4FC6C6`, and semantic `success/warning/danger/info`, `border`, `divider`, `input` |
+| `gradients` | `primary`/`sapphire` (blue), `gold`, `ruby`, `emerald`, `surface`, `background` |
 | `spacing` | `xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · xl 24 · xxl 32` |
-| `radius` | `sm 6 · md 10 · lg 16 · xl 24 · pill 999` |
-| `textVariants` | `h1 h2 h3 title subtitle body bodyStrong label caption button link` |
+| `radius` | `sm 8 · md 12 · lg 18 · xl 26 · pill 999` |
+| `textVariants` | `h1 h2 h3 title subtitle body bodyStrong label caption overline button link` |
 
 ---
 
