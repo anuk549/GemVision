@@ -29,7 +29,7 @@ Prior to model training, all conflicting and synthetic artifacts were eliminated
 
 ```mermaid
 flowchart TD
-    D1["Shop-Owner Validated Matrix<br/>(dataset_cost_estimation.xlsx)<br/>Verified Wadakuliya Labor & Setting"] --> HARMONIZE["Ground Truth Harmonization<br/>(enrich_real_data.py)"]
+    D1["Shop-Owner Validated Matrix<br/>(dataset_cost_estimation.xlsx)<br/>Verified Labor & Setting"] --> HARMONIZE["Ground Truth Harmonization<br/>(enrich_real_data.py)"]
     D2["Real Ceylon Gemstone Listings<br/>(loose_gemstones_dataset.csv, 286 rows)<br/>Wijaya, GemStock, Chanmel, JN Gems"] --> FIT["Empirical Gemstone Curve Fitting<br/>ln(Price) = β0 + β1 ln(Carats) + γ(Treat) + δ(Color)"]
     FIT --> HARMONIZE
     D3["Real Colombo Showroom Listings<br/>(finished_jewelry_dataset.csv, 157 rows)<br/>Mallika Hemachandra Gold: 100% Verified Weights<br/>Chamathka Silver: NaN Preserved"] --> HARMONIZE
@@ -59,7 +59,7 @@ $$\ln(\text{Price}) = \beta_0 + \beta_1 \ln(\text{Carats}) + \sum \gamma_i \text
 
 ---
 
-## 4. Shop Owner Verified Labor (*Wadakuliya*) Matrix
+## 4. Shop Owner Verified Labor Matrix
 
 Artisan goldsmith labor in Sri Lanka follows discrete benchmarks negotiated per piece complexity:
 - **Rings**: Simple = $3,500\text{ LKR}$, Complex = $4,500\text{ LKR}$.

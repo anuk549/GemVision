@@ -31,7 +31,7 @@ flowchart TD
     subgraph ValuationService ["5. Model 2: Dynamic BOM & Multi-Model Engine"]
         RECON --> DET_METAL["Deterministic Metal Engine<br/>Weight (g) × alloy spot rate + 10% wastage<br/>(Live Colombo Sea Street Spot API)"]
         RECON --> EMP_GEM["Empirical Gemstone Head<br/>Calibrated Power-Law Curve on 286 Loose Gems<br/>(R² = 0.836, σ = 0.572 scatter)"]
-        RECON --> SHOP_LABOR["Verified Labor & Setting Matrix<br/>Validated Wadakuliya: 3,500 - 14,000 LKR<br/>Stone setting: 800 LKR / stone"]
+        RECON --> SHOP_LABOR["Verified Labor & Setting Matrix<br/>Validated Labor Cost: 3,500 - 14,000 LKR<br/>Stone setting: 800 LKR / stone"]
     end
 
     subgraph CostAggregation ["6. Additive Bill of Materials & ML Regressor"]
@@ -115,7 +115,7 @@ Validates physical reality and prevents impossible inputs before image generatio
 2. **Empirical Gemstone Valuation Head**:
    Fitted on 286 real Ceylon gemstones with carat power-law scaling and natural market scatter ($\sigma = 0.572$):
    $$\ln(\text{Price}) = \beta_0 + \beta_1 \ln(\text{Carats}) + \sum \gamma_i \text{Treatment}_i + \sum \delta_j \text{Color}_j$$
-3. **Verified Labor Matrix (*Wadakuliya*)**:
+3. **Verified Labor Matrix**:
    - Rings: 3,500 – 4,500 LKR
    - Earrings: 4,000 – 5,000 LKR
    - Necklaces: 12,500 – 14,000 LKR
@@ -128,7 +128,7 @@ Validates physical reality and prevents impossible inputs before image generatio
 ### Stage 6: Client Output & Certificate of Valuation
 Outputs a structured certificate:
 - **Audited Visual Attributes**: Setting style, accent stones, metal tone.
-- **Itemized Bill of Materials (BOM)**: Exact breakdown of metal, center gemstone, *Wadakuliya* labor, and setting fees.
+- **Itemized Bill of Materials (BOM)**: Exact breakdown of metal, center gemstone, labor, and setting fees.
 - **Commercial Valuation Interval**:
   - **P10 Wholesale Liquidation Floor** (LKR)
   - **P50 Fair Market Appraisal Price** (LKR)
