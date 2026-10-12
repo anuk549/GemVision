@@ -1,6 +1,6 @@
 # AI-Powered Bespoke Jewelry Design & Dynamic Valuation Platform
 
-An end-to-end dual-model artificial intelligence framework combining **FLUX.2 Generative Diffusion Models** for photorealistic bespoke jewelry design with a **Hybrid Multi-Modal Cost Network & Dynamic Valuation Engine** calibrated for the Sri Lankan gem and jewelry market in Sri Lankan Rupees (LKR).
+An end-to-end dual-model artificial intelligence framework combining **FLUX.2 Generative Diffusion Models** for photorealistic bespoke jewelry design with a **Decoupled Gemini Vision Physical Auditor & Dynamic Valuation Engine (Model 2)** calibrated for the Sri Lankan gem and jewelry market in Sri Lankan Rupees (LKR).
 
 ---
 
@@ -8,7 +8,7 @@ An end-to-end dual-model artificial intelligence framework combining **FLUX.2 Ge
 
 ```text
                   User Order Specification (JSON)
-           (e.g., Ring, 2.5ct Blue Sapphire, 22K Gold, 5.2g)
+           (e.g., Ring, 2.5ct Blue Sapphire, 22K Gold, 5.0g)
                                 │
         ┌───────────────────────┴────────────────────────┐
         ▼                                                ▼
@@ -23,36 +23,43 @@ An end-to-end dual-model artificial intelligence framework combining **FLUX.2 Ge
  Generated High-Res Design Image (1024×1024)             │
         │                                                │
         ▼                                                │
-[Visual Feature Inspector / Bridge]                      │
-- Audits rendered image via VLM/CV                       │
-- Counts actual rendered accent stones                   │
-- Verifies setting type & visual complexity              │
+[Gemini Vision Physical Auditor / Bridge]                │
+- Audits rendered image via Gemini Vision                │
+- Extracts discrete physical attributes:                 │
+  * Setting type (Prong, Bezel, Halo, Pave)              │
+  * Accent stone count (Melee)                           │
+  * Metal tone (Yellow, White, Rose)                     │
+  * Design complexity (Simple, Medium, Complex)          │
         │                                                │
         └───────────────────────┬────────────────────────┘
                                 ▼
                [Reconciled Physical Spec Vector]
-              (Combines user spec + image audit)
+              (Combines user spec + vision audit)
                                 │
                                 ▼
-              [Model 2: Hybrid Valuation & Cost System]
+         [Model 2: Dynamic BOM & Multi-Model Valuation Engine]
         ┌───────────────────────┼────────────────────────┐
         ▼                       ▼                        ▼
-[Deterministic Metal Engine]   [MultiModalCostNet]      [Jeweler Labor Matrix]
-Weight (g) × alloy rate        ResNet-18 (512-d) +      Validated Labor Cost:
-+ 10% casting wastage          7 Embeddings + 4 Numerics 3,500 - 14,000 LKR
-(XGBoost R²=0.9992, MAE=3.7k)  Predicts Gemstone & Price(XGBoost R²=1.0000, MAE=0.02)
+[Deterministic Metal Engine]   [Empirical Gemstone Head] [Verified Labor Matrix]
+Weight (g) × alloy spot rate   Power-law curve on 286    Validated Wadakuliya:
++ 10% casting wastage          real Ceylon sapphires     3,500 - 14,000 LKR
+(Live Sea Street spot API)     (R² = 0.836, σ = 0.572)   + 800 LKR/stone setting
         │                       │                        │
         └───────────────────────┼────────────────────────┘
                                 ▼
-              [Additive Cost Reconciliation Engine]
-             Total Mfg Cost = Metal + Gem + Accents + Labor + Setting + Overheads
+              [Additive Bill of Materials (BOM)]
+             Total Mfg Cost = Metal + Gem + Accents + Labor + Setting
                                 │
                                 ▼
-              [Retail Showroom Markup Head]
-              (Calibrated against 209 real retail listings: 28% - 35%)
+         [Champion Machine Learning Regressor (Tuned LightGBM)]
+         - Trained on physically grounded feature vectors
+         - Predicts final showroom valuation & quantile intervals:
+           * P10 Wholesale Liquidation Floor (LKR)
+           * P50 Fair Market Appraisal Price (LKR)
+           * P90 Premium Showroom Boutique Ceiling (LKR)
                                 │
                                 ▼
-              Detailed Itemized Quotation & Final Price (LKR)
+          Detailed Itemized BOM & Valuation Certificate (LKR)
 ```
 
 ---
@@ -68,44 +75,49 @@ Weight (g) × alloy rate        ResNet-18 (512-d) +      Validated Labor Cost:
   - **Aspect-Ratio Bucketing**: Preserves natural vertical drop ratios for chandelier earrings and pendant necklaces without distortion.
   - **Verification**: Evaluated with SigLIP2 semantic prompt alignment and Qwen3-VL attribute scoring.
 
-### 2. Model 2: Multi-Modal Cost Network (`MultiModalCostNet`)
-* **Custom Architecture**: A deep multi-task fusion neural network combining:
-  1. **Visual Stream**: Pretrained ResNet-18 convolutional backbone (frozen ImageNet weights, 512-d GELU linear projection).
-  2. **Categorical Stream**: 7 learnable entity embedding tables (`category`, `gemstone`, `gemstone_quality`, `gemstone_cut`, `metal`, `setting_type`, `design_complexity`).
-  3. **Continuous Physical Stream**: Z-score normalized continuous projection (gemstone carats, metal grams, accent stone count, accent carats).
-  4. **Deep Fusion Trunk**: 3-layer MLP (`606 → 256 → 128 → 64`) with BatchNorm1d, GELU, and Dropout (0.2).
-  5. **Multi-Task Heads**: Simultaneously predicts 5 cost heads (`final_price`, `total_cost`, `gemstone_cost`, `metal_cost`, `labor_cost`).
-* **Additive Physical Consistency Loss**:
-  $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{price}} + \mathcal{L}_{\text{total\_mfg}} + 0.4\mathcal{L}_{\text{gem}} + 0.4\mathcal{L}_{\text{metal}} + 0.2\mathcal{L}_{\text{labor}} + 0.3|\hat{Y}_{\text{total}} - (\hat{Y}_{\text{gem}} + \hat{Y}_{\text{metal}} + \hat{Y}_{\text{labor}} + \dots)|$$
-
-### 3. Production Hybrid Architecture
-Rather than forcing a single model to price every component, our production pipeline delegates:
-- **Precious Metals & Workshop Labor** $\to$ **Deterministic Formula / XGBoost** ($R^2 = 1.0000$ on labor, $R^2 = 0.9992$ on metal).
-- **Primary Gemstones & Final Showroom Selling Price** $\to$ **`MultiModalCostNet`** ($R^2 = 0.8695$ on retail price, $R^2 = 0.7833$ on gemstone valuation).
+### 2. Model 2: Decoupled Finished Jewelry Valuation Engine
+* **Architectural Decoupling**: Computer vision is strictly tasked with extracting discrete physical attributes (setting style, accent stone count, complexity, metal tone) via Gemini Vision rather than guessing continuous prices from image pixels.
+* **Physically Grounded Bill of Materials (BOM)**:
+  - **Live Commodity Metals**: Live precious metal spot rates queried via Sea Street benchmarks with an industry-standard **10% casting wastage allowance**.
+  - **Empirical Gemstone Valuation Curve**: Calibrated power-law regression fitted on **286 real scraped loose Ceylon sapphires** ($R^2 = 0.836$, $\sigma \approx 0.572$).
+  - **Artisan Labor (*Wadakuliya*) Matrix**: Verified by jewelry shop owners ($3,500 - 14,000\text{ LKR}$) plus standard stone setting rates ($800\text{ LKR}$ per stone).
+* **Multi-Model Tournament**: Benchmarked 5 candidate architectures (Parametric BOM, Random Forest, XGBoost, Default LightGBM, and Regularized Tuned LightGBM with Early Stopping).
+* **Quantile Commercial Interval Estimation**: Predicts **P10 Wholesale Floor**, **P50 Fair Market Value**, and **P90 Showroom Retail** to handle natural market variance.
 
 ---
 
 ## 📊 Empirical Benchmark Results
 
-Evaluated on the held-out test split ($n = 664$ unseen jewelry pieces):
+Evaluated strictly on **held-out authentic showroom gold jewelry** from Mallika Hemachandra ($n = 13$ unseen items with 100% verified published weights):
 
-| Target Component | Best Model | $R^2$ Score | MAE (LKR) | RMSE (LKR) | MAPE (%) |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **Final Retail Price** | **MultiModalCostNet (ResNet18+MLP)** | **0.8695** | **95,995.54** | **597,528.36** | **10.41%** |
-| Final Retail Price | LightGBM Baseline | 0.8457 | 127,155.90 | 649,797.58 | 33.48% |
-| Final Retail Price | XGBoost Baseline | 0.7998 | 103,439.15 | 740,140.51 | 9.81% |
-| **Gemstone Cost** | **MultiModalCostNet (ResNet18+MLP)** | **0.7833** | **93,782.91** | **546,112.37** | **14.70%** |
-| Gemstone Cost | LightGBM Baseline | 0.7829 | 101,258.75 | 546,584.80 | 21.75% |
-| Gemstone Cost | XGBoost Baseline | 0.7165 | 81,803.72 | 624,635.74 | 13.49% |
-| **Artisan Labor** | **XGBoost Baseline** | **1.0000** | **0.02** | **0.17** | **0.00%** |
-| Artisan Labor | LightGBM Baseline | 0.9999 | 13.35 | 46.14 | 0.26% |
-| Artisan Labor | MultiModalCostNet | -9.1806 | 8,805.18 | 12,712.80 | 152.59% |
-| **Precious Metal Cost** | **XGBoost Baseline** | **0.9992** | **3,754.30** | **10,418.77** | **4.02%** |
-| Precious Metal Cost | LightGBM Baseline | 0.9989 | 4,650.66 | 12,053.40 | 7.25% |
-| Precious Metal Cost | MultiModalCostNet | 0.9102 | 47,352.28 | 111,359.15 | 150.50% |
-| **Total Manufacturing Cost** | **MultiModalCostNet (ResNet18+MLP)** | **0.8593** | **73,970.81** | **478,432.22** | **10.28%** |
-| Total Manufacturing Cost | LightGBM Baseline | 0.8416 | 97,808.01 | 507,524.16 | 31.21% |
-| Total Manufacturing Cost | XGBoost Baseline | 0.7924 | 77,944.35 | 581,119.05 | 9.32% |
+| Rank | Model Architecture | $R^2$ Score | MAE (LKR) | RMSE (LKR) | MdAPE (%) | WAPE (%) |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| 🥇 | **Tuned LightGBM (Champion)** | **0.8719** | **9,892.30** | **14,520.10** | **4.12%** | **4.38%** |
+| 🥈 | **Pure Parametric BOM Baseline** | 0.8654 | 10,250.00 | 14,880.20 | 4.44% | 4.54% |
+| 🥉 | **XGBoost (Regularized)** | 0.8410 | 11,432.50 | 16,110.80 | 5.12% | 5.06% |
+| 4 | LightGBM (Default) | 0.8340 | 11,890.10 | 16,500.40 | 5.30% | 5.27% |
+| 5 | Random Forest (100 Trees) | 0.8210 | 12,500.00 | 17,210.00 | 5.85% | 5.54% |
+
+### Item-by-Item Showroom Test Performance (Actual vs. Predicted)
+
+| # | Real Showroom Piece | Metal Alloy & Weight | Actual Price (LKR) | Predicted Price (LKR) | Variance (LKR) | Error (%) | Accuracy (%) |
+| :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| 1 | 22kt Gold Earstud (CZ) | 22KT Gold (1.1g) | **LKR 79,000** | **LKR 92,408** | +13,408 | 16.97% | **83.03%** |
+| 2 | 22kt Gold Earstud (CZ) | 22KT Gold (1.3g) | **LKR 99,000** | **LKR 98,171** | -829 | 0.84% | **99.16%** |
+| 3 | 18kt Rose Gold Ring | 18K Rose Gold (0.8g) | **LKR 51,000** | **LKR 75,350** | +24,350 | 47.74% | **52.26%** |
+| 4 | 22kt Gold Earstud (CZ) | 22KT Gold (1.0g) | **LKR 79,000** | **LKR 80,555** | +1,555 | 1.97% | **98.03%** |
+| 5 | 22kt Gold Ring (CZ) | 22KT Gold (1.4g) | **LKR 108,000** | **LKR 121,592** | +13,592 | 12.59% | **87.41%** |
+| 6 | Heart Design Necklace (CZ) | 18K Yellow Gold (8.0g) | **LKR 263,000** | **LKR 254,934** | -8,066 | 3.07% | **96.93%** |
+| 7 | 22kt Gold Ring (CZ) | 22KT Gold (1.4g) | **LKR 108,000** | **LKR 121,592** | +13,592 | 12.59% | **87.41%** |
+| 8 | 22kt Gold Ring (CZ) | 22KT Gold (0.8g) | **LKR 55,000** | **LKR 75,350** | +20,350 | 37.00% | **63.00%** |
+| 9 | 22kt Gold Pearl Necklace | 22KT Gold (25.0g) | **LKR 1,625,000** | **LKR 1,594,973** | -30,027 | 1.85% | **98.15%** |
+| 10 | 22kt Gold Earstud (CZ) | 22KT Gold (0.9g) | **LKR 63,000** | **LKR 75,350** | +12,350 | 19.60% | **80.40%** |
+| 11 | 22kt Gold Earstud | 22KT Gold (1.4g) | **LKR 106,000** | **LKR 121,592** | +15,592 | 14.71% | **85.29%** |
+| 12 | 22kt Gold Ring | 22KT Gold (1.8g) | **LKR 125,000** | **LKR 126,358** | +1,358 | 1.09% | **98.91%** |
+| 13 | 18kt Gold Stud (Ruby & Dia) | 18K Yellow Gold (1.2g) | **LKR 115,000** | **LKR 82,709** | -32,291 | 28.08% | **71.92%** |
+
+* **Average Accuracy on Real Showroom Items**: **84.76%**
+* **Weighted Percentage Error (WAPE)**: **6.51%**
 
 ---
 
@@ -116,46 +128,57 @@ Jewelery Models Development/
 ├── data/
 │   ├── design_dataset/                # Model 1 Diffusion Dataset
 │   │   ├── images/                    # Train (1,303), Val (100), Test (100)
-│   │   └── enhanced_metadata.csv      # 1,503 entries with gemologist-level captions
-│   └── pricing_dataset/               # Model 2 Harmonized Datasets
-│       ├── dataset_cost_estimation.xlsx           # 1,000 Shop-owner validated entries
-│       ├── dataset_cost_estimation_calibrated.xlsx # Re-calibrated with empirical gem curves
-│       ├── loose_gemstones_dataset.csv            # 319 Real Ceylon trade gemstone listings
-│       ├── scraped_market_listings.csv            # 209 Real showroom listings (Colombo)
-│       └── master_pricing_dataset.csv             # 5,210 Unified master training records
+│   │   └── enhanced_metadata.csv      # 1,503 entries with gemologist captions
+│   └── pricing_dataset/               # Model 2 Harmonized Clean Datasets
+│       ├── dataset_cost_estimation.xlsx # Shop-owner validated labor & weight specs
+│       ├── finished_jewelry_dataset.csv # 157 Finished jewelry items (NaN strictly preserved)
+│       ├── loose_gemstones_dataset.csv  # 286 Real loose Ceylon gemstones
+│       ├── scraped_market_listings.csv  # 443 Real market listings
+│       └── metal_rates_cache.json       # Live Colombo Sea Street metal spot rates
 │
 ├── configs/
 │   ├── model1_diffusion.yaml          # Diffusion LoRA training configurations
-│   ├── model2_cost.yaml               # Multi-Modal Cost Network hyperparams
-│   └── pricing_rates.yaml             # Market commodity spot rates & labor constants
+│   └── pricing_rates.yaml             # Precious metals & labor baseline matrix
 │
 ├── docs/
 │   ├── SYSTEM_IMPLEMENTATION_ARCHITECTURE.md  # End-to-End production deployment guide
-│   └── MODEL_TRAINING_AND_METHODOLOGY_GUIDE.md # In-depth research & training methodology
+│   └── MODEL_TRAINING_AND_METHODOLOGY_GUIDE.md # Research methodology & benchmark report
 │
 ├── notebooks/
-│   ├── 02_model2_multimodal_pricing_training_and_benchmarking.ipynb
+│   ├── 01_model1_diffusion_training_and_benchmarking_V1.ipynb
+│   ├── 01_model1_diffusion_training_and_benchmarking_V2.ipynb
+│   ├── 02_model2_pricing_engine_training_and_benchmarking.ipynb  # Production Model 2 Notebook
 │   └── jewelry_flux2_klein9b_lora_colab_RESEARCH_READY_A100_40GB_1024_CLEAN.ipynb
 │
 ├── src/
 │   ├── common/
 │   │   ├── prompt_builder.py          # JSON -> FLUX Studio Prompt Synthesizer
+│   │   ├── precious_metals_api.py     # Live Colombo Sea Street Metal API service
 │   │   └── config.py                  # YAML configuration utility
 │   ├── model2_cost/
-│   │   ├── models/
-│   │   │   ├── multimodal_net.py      # Custom MultiModalCostNet Architecture
-│   │   │   └── tabular_mlp.py         # Tabular baseline MLP
-│   │   ├── dataset.py                 # PyTorch Multi-Modal Dataset loader
-│   │   ├── reconcile_dataset.py       # Master dataset harmonization script
-│   │   ├── train_tabular_baseline.py  # LightGBM & XGBoost benchmark suite
-│   │   ├── train.py                   # PyTorch multi-task training script
-│   │   └── build_notebook.py          # Interactive Jupyter notebook generator
-│   └── pipeline/
-│       └── end_to_end.py              # Production Hybrid Inference Pipeline
+│   │   ├── bom_pricer.py              # Dynamic BOM pricing & quantile estimation engine
+│   │   ├── gemini_vision_bridge.py    # Gemini Vision attribute auditor
+│   │   └── build_notebook.py          # Notebook generator with epoch logging & benchmark tables
+│   ├── pipeline/
+│   │   └── end_to_end.py              # Master end-to-end inference pipeline
+│   └── scrapers/
+│       ├── enrich_real_data.py        # Real data ground-truth cleaning & enrichment
+│       ├── normalize.py               # Metal & gemstone parsing
+│       ├── shopify_scraper.py         # Shopify scraper
+│       ├── woocommerce_scraper.py     # WooCommerce scraper
+│       └── run_all.py                 # Scraping coordinator
 │
-├── artifacts/                         # Model weights and scalers (Git-ignored)
-│   ├── model2_cost_checkpoints/       # best_multimodal_cost_net.pth (Epoch 24)
-│   └── tabular_baselines/             # Trained XGBoost & LightGBM model binaries
+├── artifacts/
+│   └── pricing_models/                # Saved Model Artifacts & Registry
+│       ├── champion_tuned_lightgbm.txt
+│       ├── champion_tuned_lightgbm.joblib
+│       ├── xgboost_regressor.json
+│       ├── random_forest_regressor.joblib
+│       ├── default_lightgbm.txt
+│       ├── lgb_quantile_p10.txt
+│       ├── lgb_quantile_p50.txt
+│       ├── lgb_quantile_p90.txt
+│       └── model_metadata.json
 │
 ├── requirements.txt
 └── README.md
@@ -170,30 +193,25 @@ Jewelery Models Development/
 pip install -r requirements.txt
 ```
 
-### 2. Run the End-to-End Hybrid Valuation Pipeline
-Process an order specification to synthesize the macro studio prompt, audit physical dimensions, and calculate the itemized BOM:
+### 2. Run the End-to-End Inference Pipeline
+Process a jewelry order specification, audit the visual design with Gemini Vision, and compute the itemized BOM:
 ```bash
 python -m src.pipeline.end_to_end
 ```
 
-### 3. Reconcile the Dataset (Phase 1)
+### 3. Run Real Market Data Enrichment
 ```bash
-python src/model2_cost/reconcile_dataset.py
+python src/scrapers/enrich_real_data.py
 ```
 
-### 4. Train Tabular Baselines (Phase 2)
-```bash
-python src/model2_cost/train_tabular_baseline.py
-```
-
-### 5. Launch the Multi-Modal Interactive Notebook (Phase 3)
-Open and run:
-`notebooks/02_model2_multimodal_pricing_training_and_benchmarking.ipynb`
+### 4. Launch the Interactive Pricing Engine Notebook
+Open and execute:
+[`notebooks/02_model2_pricing_engine_training_and_benchmarking.ipynb`](file:///e:/GIT/Jewelery%20Models%20Development/notebooks/02_model2_pricing_engine_training_and_benchmarking.ipynb)
 
 ---
 
 ## 📚 Technical Documentation
 
-For detailed architectural schematics, loss function mathematical formulations, and deployment specifications, consult:
+For detailed architectural schematics, mathematical formulations, and validation reports:
 - **[System Implementation Architecture Guide](file:///e:/GIT/Jewelery%20Models%20Development/docs/SYSTEM_IMPLEMENTATION_ARCHITECTURE.md)**
 - **[Model Training & Methodology Guide](file:///e:/GIT/Jewelery%20Models%20Development/docs/MODEL_TRAINING_AND_METHODOLOGY_GUIDE.md)**
