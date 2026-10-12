@@ -1,0 +1,34 @@
+currency: "LKR"
+
+spot_rates_per_gram:
+  18K_Yellow_Gold: 23500.0
+  18K_White_Gold: 24500.0
+  18K_Rose_Gold: 24000.0
+  14K_Gold: 18500.0
+  Platinum: 19000.0
+  925_Sterling_Silver: 450.0
+
+gemstone_rates:
+  diamond_melee_per_carat: 180000.0
+  sapphire_1ct_base:
+    Commercial:
+      Blue_Sapphire: 35000.0
+      Yellow_Sapphire: 25000.0
+    Fine:
+      Blue_Sapphire: 95000.0
+      Yellow_Sapphire: 65000.0
+    Extra_Fine:
+      Blue_Sapphire: 220000.0
+      Yellow_Sapphire: 140000.0
+    Royal_Cornflower:
+      Blue_Sapphire: 450000.0
+      Yellow_Sapphire: 280000.0
+
+labor_costs:
+  low_complexity: 15000.0
+  medium_complexity: 27000.0
+  high_complexity: 48000.0
+  setting_per_seat: 850.0
+  hallmark_polishing_overhead: 6500.0
+
+default_markup_range: [0.25, 0.35]

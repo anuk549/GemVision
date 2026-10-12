@@ -1,0 +1,25 @@
+model_type: "sdxl_lora"
+pretrained_model_name_or_path: "stabilityai/stable-diffusion-xl-base-1.0"
+dataset:
+  train_data_dir: "data/design_dataset"
+  metadata_file: "data/design_dataset/enhanced_metadata.csv"
+  image_column: "image_path"
+  caption_column: "caption_narrative"
+  tag_column: "caption_tags"
+  resolution: 512
+  center_crop: true
+  random_flip: true
+
+training:
+  output_dir: "artifacts/model1_lora"
+  train_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 1.0e-4
+  lr_scheduler: "cosine"
+  lr_warmup_steps: 100
+  max_train_steps: 1500
+  lora_rank: 16
+  lora_alpha: 32
+  mixed_precision: "fp16"
+  checkpointing_steps: 500
+  seed: 42
