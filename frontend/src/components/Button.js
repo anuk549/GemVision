@@ -11,6 +11,7 @@ const VARIANTS = {
   ghost: { background: colors.transparent, border: colors.transparent, text: colors.textMuted },
   danger: { background: colors.danger, border: colors.danger, text: colors.white },
   success: { background: colors.success, border: colors.success, text: colors.textOnAccent },
+  emerald: { background: colors.emerald, border: colors.emerald, text: '#071610' },
 };
 
 const SIZES = {
@@ -25,6 +26,7 @@ export default function Button({
   onPress,
   variant = 'primary',
   size = 'md',
+  pill = false,
   icon,
   iconRight,
   loading = false,
@@ -45,6 +47,7 @@ export default function Button({
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.base,
+        pill && { borderRadius: radius.pill },
         {
           height: dims.height,
           paddingHorizontal: dims.padding,

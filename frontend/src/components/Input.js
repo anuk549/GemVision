@@ -7,6 +7,7 @@ import ErrorMessage from './ErrorMessage';
 
 export default function Input({
   label,
+  labelColor,
   value,
   onChangeText,
   placeholder,
@@ -35,7 +36,7 @@ export default function Input({
   return (
     <View style={[styles.wrapper, style]}>
       {label ? (
-        <AppText variant="label" color={colors.textMuted} style={styles.label}>
+        <AppText variant="label" color={labelColor || colors.textMuted} style={styles.label}>
           {label}
           {required ? <AppText color={colors.danger}> *</AppText> : null}
         </AppText>

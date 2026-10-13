@@ -10,6 +10,7 @@ export default function LoadingBar({
   color = colors.accent,
   height = 6,
   label,
+  labelColor,
   showPercentage = false,
   style,
 }) {
@@ -46,7 +47,7 @@ export default function LoadingBar({
     <View style={[styles.wrapper, style]}>
       {label || showPercentage ? (
         <View style={styles.row}>
-          <AppText variant="caption" color={colors.textMuted}>
+          <AppText variant="caption" color={labelColor || colors.textMuted}>
             {label}
           </AppText>
           {showPercentage && !indeterminate ? (

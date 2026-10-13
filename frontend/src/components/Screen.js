@@ -8,6 +8,8 @@ import AppText from './AppText';
 export default function Screen({
   title,
   subtitle,
+  titleColor,
+  headerTop,
   headerRight,
   children,
   scroll = true,
@@ -23,10 +25,12 @@ export default function Screen({
     <View style={[styles.root, style]}>
       <LinearGradient colors={gradients.background} style={StyleSheet.absoluteFill} />
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        {headerTop ? <View style={styles.headerTop}>{headerTop}</View> : null}
+
         {title ? (
           <View style={styles.header}>
             <View style={styles.headerText}>
-              <AppText variant="h3">{title}</AppText>
+              <AppText variant="h3" color={titleColor}>{title}</AppText>
               {subtitle ? (
                 <AppText variant="caption" color={colors.textMuted} style={styles.subtitle}>
                   {subtitle}
@@ -60,6 +64,10 @@ const styles = StyleSheet.create({
   },
   safe: {
     flex: 1,
+  },
+  headerTop: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   header: {
     flexDirection: 'row',
