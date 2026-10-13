@@ -1,217 +1,158 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   AppText,
   Button,
   Card,
   Icon,
-  KeyValue,
-  LoadingBar,
-  Pagination,
-  Popup,
   Screen,
-  SearchBar,
-  Table,
-  UploadCard,
 } from '../../../components';
 import { colors, radius, spacing } from '../../../theme';
 
-const PAGE_SIZE = 4;
-const GEMS = [
-  'Blue Sapphire',
-  'Yellow Sapphire',
-  'Star Sapphire',
-  'Ruby',
-  "Cat's Eye",
-  'Moonstone',
-  'Emerald',
-  'Spinel',
-  'Topaz',
-];
-const HUES = [
-  'Cornflower Blue',
-  'Royal Blue',
-  'Golden Yellow',
-  'Crimson Red',
-  'Honey',
-  'Milky White',
-  'Vivid Green',
-  'Soft Pink',
-  'Champagne',
-];
-
-const SEED = [
-  { id: '1', gem: 'Blue Sapphire', color: 'Cornflower Blue', carat: '2.41', confidence: 96 },
-  { id: '2', gem: 'Ruby', color: 'Crimson Red', carat: '1.18', confidence: 91 },
-  { id: '3', gem: "Cat's Eye", color: 'Honey', carat: '2.05', confidence: 88 },
-];
-
-const pick = (list) => list[Math.floor(Math.random() * list.length)];
-
 export default function IdentifyScreen() {
-  const [image, setImage] = useState(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState(null);
-  const [history, setHistory] = useState(SEED);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [popup, setPopup] = useState({ visible: false, type: 'info', title: '', message: '' });
-
-  const analyze = async () => {
-    if (!image) {
-      setPopup({
-        visible: true,
-        type: 'warning',
-        title: 'No image',
-        message: 'Add a gemstone photo before running identification.',
-      });
-      return;
-    }
-    setAnalyzing(true);
-    setResult(null);
-    await new Promise((resolve) => setTimeout(resolve, 1600));
-    const res = {
-      id: String(Date.now()),
-      gem: pick(GEMS),
-      color: pick(HUES),
-      carat: (0.5 + Math.random() * 4).toFixed(2),
-      confidence: 85 + Math.floor(Math.random() * 14),
-    };
-    setResult(res);
-    setHistory((prev) => [res, ...prev]);
-    setAnalyzing(false);
-  };
-
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return history;
-    return history.filter(
-      (row) => row.gem.toLowerCase().includes(query) || row.color.toLowerCase().includes(query)
-    );
-  }, [history, search]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const current = Math.min(page, totalPages);
-  const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-
-  const columns = [
-    { key: 'gem', title: 'Gemstone', flex: 1.4 },
-    { key: 'color', title: 'Color', flex: 1.1 },
-    { key: 'carat', title: 'Carat', width: 74, align: 'center' },
-    {
-      key: 'confidence',
-      title: 'Match',
-      width: 84,
-      align: 'center',
-      render: (row) => {
-        const color = row.confidence >= 90 ? colors.success : colors.warning;
-        return (
-          <View style={[styles.badge, { backgroundColor: `${color}22` }]}>
-            <AppText variant="caption" weight="700" color={color}>
-              {row.confidence}%
-            </AppText>
-          </View>
-        );
-      },
-    },
-  ];
+  const router = useRouter();
 
   return (
-    <Screen title="Gem Identification" subtitle="Recognise gemstone type from a photo.">
-      <UploadCard
-        value={image}
-        onChange={(asset) => {
-          setImage(asset);
-          setResult(null);
-        }}
-        title="Add a gemstone photo"
-      />
+    <Screen
+      title="Gem Identification"
+      subtitle="Mineralogical species & color grading module"
+    >
+      <Card style={styles.card}>
+        <View style={styles.iconContainer}>
+          <Icon name="search" size={38} color={colors.sapphire} />
+        </View>
 
-      <Button title="Identify gemstone" icon="search" loading={analyzing} onPress={analyze} />
+        <View style={styles.badge}>
+          <Icon name="construct-outline" size={13} color={colors.sapphire} />
+          <AppText variant="caption" weight="700" color={colors.sapphire}>
+            RESEARCH TEAM MODULE · IN DEVELOPMENT
+          </AppText>
+        </View>
 
-      {analyzing ? <LoadingBar indeterminate label="Analyzing image…" /> : null}
+        <AppText variant="h3" style={styles.title}>
+          Gemstone Identification & Classification
+        </AppText>
 
-      {result ? (
-        <Card>
-          <View style={styles.resultHeader}>
-            <View style={styles.resultIcon}>
-              <Icon name="sparkles" size={18} color={colors.accent} />
-            </View>
-            <AppText variant="title">Identification result</AppText>
-          </View>
-          <KeyValue
-            items={[
-              { label: 'Gemstone', value: result.gem, icon: 'diamond-outline', color: colors.accent },
-              { label: 'Color', value: result.color, icon: 'color-filter-outline' },
-              { label: 'Estimated carat', value: result.carat, icon: 'scale-outline' },
-              { label: 'Confidence', value: `${result.confidence}%`, icon: 'shield-checkmark-outline', color: colors.success },
-            ]}
-          />
-        </Card>
-      ) : null}
+        <AppText variant="body" color={colors.textMuted} style={styles.description}>
+          This mineralogical classification component is designed and being actively trained by our
+          gemstone identification team member. It classifies gemstone species (Corundum, Beryl, Chrysoberyl)
+          and authenticates color varieties. Output measurements and classifications from this module
+          feed directly into the Jewelry Design Lab.
+        </AppText>
 
-      <AppText variant="title" style={styles.sectionTitle}>
-        Recent identifications
-      </AppText>
-      <SearchBar
-        value={search}
-        onChangeText={(text) => {
-          setSearch(text);
-          setPage(1);
-        }}
-        placeholder="Search gemstone or color…"
-      />
+        <View style={styles.divider} />
 
-      <Table
-        columns={columns}
-        data={rows}
-        emptyTitle="No identifications"
-        emptyMessage="Identify a gemstone to see it here."
-        footer={
-          <View style={styles.footer}>
-            <AppText variant="caption" color={colors.textDim}>
-              {filtered.length} result{filtered.length === 1 ? '' : 's'}
+        <AppText variant="label" color={colors.textMuted} style={styles.featureHeader}>
+          UPCOMING CAPABILITIES
+        </AppText>
+
+        <View style={styles.featureList}>
+          <View style={styles.featureRow}>
+            <Icon name="checkmark-circle" size={18} color={colors.sapphire} />
+            <AppText variant="body" color={colors.text}>
+              Species classification & mineral identification
             </AppText>
-            <Pagination page={current} totalPages={totalPages} onPageChange={setPage} />
           </View>
-        }
-      />
+          <View style={styles.featureRow}>
+            <Icon name="checkmark-circle" size={18} color={colors.sapphire} />
+            <AppText variant="body" color={colors.text}>
+              Color hue grading & shade verification
+            </AppText>
+          </View>
+          <View style={styles.featureRow}>
+            <Icon name="checkmark-circle" size={18} color={colors.sapphire} />
+            <AppText variant="body" color={colors.text}>
+              Direct pipeline bridge to Jewelry Design & Valuation
+            </AppText>
+          </View>
+        </View>
 
-      <Popup
-        visible={popup.visible}
-        type={popup.type}
-        title={popup.title}
-        message={popup.message}
-        onClose={() => setPopup((prev) => ({ ...prev, visible: false }))}
-      />
+        <View style={styles.actions}>
+          <Button
+            title="Open Jewelry Design Lab"
+            icon="sparkles"
+            variant="emerald"
+            pill
+            onPress={() => router.push('/design')}
+          />
+          <Button
+            title="Back to Dashboard"
+            variant="ghost"
+            onPress={() => router.push('/')}
+            style={styles.backButton}
+          />
+        </View>
+      </Card>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  resultHeader: {
+  card: {
+    alignItems: 'center',
+    padding: spacing.xl,
+    marginTop: spacing.md,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(62, 123, 250, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(62, 123, 250, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(62, 123, 250, 0.15)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    marginBottom: spacing.sm,
+  },
+  title: {
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  description: {
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.md,
+  },
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
+  },
+  featureHeader: {
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  featureList: {
+    width: '100%',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  resultIcon: {
-    width: 34,
-    height: 34,
+    backgroundColor: colors.surfaceAlt,
+    padding: spacing.md,
     borderRadius: radius.md,
-    backgroundColor: colors.accentSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  sectionTitle: {
-    marginTop: spacing.sm,
+  actions: {
+    width: '100%',
+    gap: spacing.xs,
   },
-  footer: {
-    gap: spacing.md,
-  },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
+  backButton: {
+    marginTop: spacing.xs,
   },
 });
