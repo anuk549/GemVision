@@ -1,0 +1,72 @@
+[
+  {
+    "id": "gem-bs-cushion-25",
+    "name": "Ceylon Royal Blue Sapphire (Cushion Cut)",
+    "filename": "blue_sapphire_cushion_2.5ct.png",
+    "species": "Blue Sapphire",
+    "carat": 2.5,
+    "color": "Royal Blue",
+    "shape": "Cushion",
+    "size_mm": "8.2 x 6.8 x 4.9 mm",
+    "treatment": "Heated",
+    "stone_grade": "AAA (Extra Fine)",
+    "predicted_price_lkr": 945000,
+    "color_hex": "#1B3F8B"
+  },
+  {
+    "id": "gem-bs-oval-31",
+    "name": "Cornflower Blue Sapphire (Oval Brilliant)",
+    "filename": "cornflower_blue_oval_3.1ct.png",
+    "species": "Blue Sapphire",
+    "carat": 3.1,
+    "color": "Cornflower Blue",
+    "shape": "Oval",
+    "size_mm": "9.4 x 7.3 x 5.2 mm",
+    "treatment": "Natural Unheated",
+    "stone_grade": "AAAA (Investment)",
+    "predicted_price_lkr": 2650000,
+    "color_hex": "#4169E1"
+  },
+  {
+    "id": "gem-pad-pear-18",
+    "name": "Ceylon Padparadscha Sapphire (Pear Cut)",
+    "filename": "padparadscha_pear_1.8ct.png",
+    "species": "Padparadscha",
+    "carat": 1.8,
+    "color": "Sunset Lotus Pink-Orange",
+    "shape": "Pear",
+    "size_mm": "7.8 x 5.5 x 3.8 mm",
+    "treatment": "Natural Unheated",
+    "stone_grade": "AAA (Extra Fine)",
+    "predicted_price_lkr": 1420000,
+    "color_hex": "#F48A72"
+  },
+  {
+    "id": "gem-ruby-pigeon-20",
+    "name": "Burmese Pigeon Blood Ruby (Round Cut)",
+    "filename": "ruby_pigeon_blood_2.0ct.png",
+    "species": "Ruby",
+    "carat": 2.0,
+    "color": "Pigeon Blood Red",
+    "shape": "Round",
+    "size_mm": "7.2 x 7.2 x 4.4 mm",
+    "treatment": "Heated",
+    "stone_grade": "AA (Fine Jewelry)",
+    "predicted_price_lkr": 1180000,
+    "color_hex": "#C21838"
+  },
+  {
+    "id": "gem-ys-round-22",
+    "name": "Vivid Yellow Sapphire / Pushparaga (Round Brilliant)",
+    "filename": "yellow_sapphire_round_2.2ct.png",
+    "species": "Yellow Sapphire",
+    "carat": 2.2,
+    "color": "Vivid Yellow",
+    "shape": "Round",
+    "size_mm": "7.6 x 7.6 x 4.6 mm",
+    "treatment": "Heated",
+    "stone_grade": "AA (Fine Jewelry)",
+    "predicted_price_lkr": 385000,
+    "color_hex": "#E8A718"
+  }
+]

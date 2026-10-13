@@ -1,0 +1,86 @@
+from typing import Optional, Dict, Any, List
+from pydantic import BaseModel, Field
+from .gemstone import TeamMemberGemstoneInput
+from .pipeline import PipelineOptionEnum, AestheticStyleEnum
+
+
+class ItemizedBOM(BaseModel):
+    metal_cost_lkr: int = Field(..., description="Precious metal cost (grams * spot rate * 1.10 wastage)")
+    gemstone_cost_lkr: int = Field(..., description="Center gemstone cost (from team member input or empirical power-law curve)")
+    labor_cost_lkr: int = Field(..., description="Verified Wadakuliya artisan labor")
+    setting_cost_lkr: int = Field(..., description="Stone setting & prong labor")
+    accent_cost_lkr: int = Field(..., description="Accent melee stones cost")
+    total_manufacturing_cost_lkr: int = Field(..., description="Total manufacturing cost")
+
+
+class QuantileValuation(BaseModel):
+    p10_wholesale_floor_lkr: int = Field(..., description="Wholesale liquidation baseline")
+    p50_fair_market_price_lkr: int = Field(..., description="Fair market appraised value")
+    p90_showroom_ceiling_lkr: int = Field(..., description="Boutique showroom retail price")
+
+
+class AuditedAttributes(BaseModel):
+    setting_type: str = "Prong"
+    number_of_accent_stones: int = 0
+    metal_tone: str = "Yellow"
+    design_complexity: str = "Simple"
+
+
+class JewelryDesignRequest(BaseModel):
+    # Generative prompt & aesthetics
+    prompt: Optional[str] = Field("A ring with multiple lines of this gem", description="Creative vision prompt")
+    aesthetic_style: Optional[AestheticStyleEnum] = Field(AestheticStyleEnum.MODERN, description="Aesthetic style")
+    pipeline_option: Optional[PipelineOptionEnum] = Field(PipelineOptionEnum.HYBRID, description="Pipeline architecture")
+
+    # Jewelry structure
+    category: str = Field("Ring", description="Ring, Necklace, Earring, Bracelet")
+    metal: str = Field("22KT Gold", description="Precious metal alloy")
+    metal_weight_g: float = Field(5.0, description="Metal mass in grams")
+    setting_type: str = Field("Prong", description="Prong, Bezel, Halo, Pave, Channel")
+    number_of_accent_stones: int = Field(0, description="Count of melee accent stones")
+
+    # Loose gemstone variables (can come from user or team member's component)
+    gemstone: Optional[str] = Field("Blue Sapphire", description="Species/Type")
+    gemstone_weight_ct: Optional[float] = Field(2.5, description="Weight in carats")
+    color_grade: Optional[str] = Field("Royal Blue", description="Color grade")
+    stone_grade: Optional[str] = Field("AA (Fine Jewelry)", description="Quality grade")
+    treatment: Optional[str] = Field("Heated", description="Treatment")
+
+    # Team member integration block
+    team_member_gemstone: Optional[TeamMemberGemstoneInput] = Field(None, description="Detailed attributes from gemstone team member module")
+
+    # Reference asset
+    gemstone_asset_id: Optional[str] = Field(None, description="ID from assets/gemstones/catalog.json")
+    image_base64: Optional[str] = Field(None, description="Uploaded reference or loose stone image")
+
+
+class PriceEstimateRequest(BaseModel):
+    category: str = "Ring"
+    metal: str = "22KT Gold"
+    metal_weight_g: float = 5.0
+    gemstone: str = "Blue Sapphire"
+    gemstone_weight_ct: float = 2.5
+    setting_type: str = "Prong"
+    color_grade: str = "Royal Blue"
+    stone_grade: str = "AA (Fine Jewelry)"
+    treatment: str = "Heated"
+    number_of_accent_stones: int = 0
+    design_complexity: Optional[str] = "Simple"
+
+    # Team member gemstone variables
+    team_member_gemstone: Optional[TeamMemberGemstoneInput] = None
+
+
+class JewelryDesignResponse(BaseModel):
+    status: str = "success"
+    prompt: str
+    aesthetic_style: str
+    pipeline_used: str
+    image_url: Optional[str] = None
+    image_base64: Optional[str] = None
+    design_sample: int = 1
+    audited_attributes: AuditedAttributes
+    bom_breakdown: ItemizedBOM
+    valuation: QuantileValuation
+    execution_source: str = Field("mock_local", description="'runpod' or 'mock_local'")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
