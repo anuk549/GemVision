@@ -16,6 +16,10 @@ export const calculatePricing = async (specs) => {
       number_of_accent_stones: Number(specs.number_of_accent_stones || 0),
     };
 
+    if (specs.team_member_gemstone) {
+      payload.team_member_gemstone = specs.team_member_gemstone;
+    }
+
     const response = await apiClient.post(`${API_PREFIX}/jewelry/price-estimate`, payload, {
       timeout: PREDICT_TIMEOUT_MS,
     });
@@ -23,6 +27,14 @@ export const calculatePricing = async (specs) => {
   } catch {
     // Offline / fallback calculation grounded in empirical BOM formulas
     return calculateOfflineEstimate(specs);
+  }
+};
+
+export const fetchGemstoneCatalog = async () => {
+  try {
+    return await apiClient.get(`${API_PREFIX}/gemstones`);
+  } catch {
+    return [];
   }
 };
 
@@ -38,6 +50,18 @@ export const generateDesignAndQuote = async (specs, imageAsset = null) => {
   form.append('stone_grade', specs.stone_grade);
   form.append('treatment', specs.treatment);
   form.append('number_of_accent_stones', String(specs.number_of_accent_stones || 0));
+  form.append('prompt', specs.prompt || '');
+  form.append('aesthetic_style', specs.aesthetic_style || 'Modern');
+
+  if (specs.pipeline_option) {
+    form.append('pipeline_option', specs.pipeline_option);
+  }
+  if (specs.gemstone_asset_id) {
+    form.append('gemstone_asset_id', specs.gemstone_asset_id);
+  }
+  if (specs.team_member_gemstone) {
+    form.append('team_member_gemstone_json', JSON.stringify(specs.team_member_gemstone));
+  }
 
   if (imageAsset) {
     const uri = typeof imageAsset === 'string' ? imageAsset : imageAsset?.uri;
@@ -108,6 +132,9 @@ const calculateOfflineEstimate = (specs) => {
       p50_fair_market_price_lkr: Math.round(totalCost * 1.22),
       p90_showroom_ceiling_lkr: Math.round(totalCost * 1.42),
     },
+    prompt: specs.prompt || 'A ring with multiple lines of this gem',
+    aesthetic_style: specs.aesthetic_style || 'Modern',
+    design_sample: specs.sample_index || 1,
     audited_attributes: {
       setting_type: specs.setting_type || 'Prong',
       number_of_accent_stones: accents,

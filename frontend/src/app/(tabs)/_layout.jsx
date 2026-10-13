@@ -15,7 +15,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.emerald,
         tabBarInactiveTintColor: colors.textDim,
         tabBarStyle: {
           backgroundColor: colors.surface,
@@ -31,23 +31,23 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}
+        options={{ title: 'Home', tabBarIcon: tabIcon('grid', 'grid-outline') }}
+      />
+      <Tabs.Screen
+        name="detect"
+        options={{ title: 'Scanner', tabBarIcon: tabIcon('scan', 'scan-outline') }}
+      />
+      <Tabs.Screen
+        name="design"
+        options={{ title: 'Design', tabBarIcon: tabIcon('sparkles', 'sparkles-outline') }}
       />
       <Tabs.Screen
         name="identify"
         options={{ title: 'Identify', tabBarIcon: tabIcon('search', 'search-outline') }}
       />
       <Tabs.Screen
-        name="detect"
-        options={{ title: 'Detect', tabBarIcon: tabIcon('diamond', 'diamond-outline') }}
-      />
-      <Tabs.Screen
         name="cutting"
         options={{ title: 'Cutting', tabBarIcon: tabIcon('cut', 'cut-outline') }}
-      />
-      <Tabs.Screen
-        name="design"
-        options={{ title: 'Design', tabBarIcon: tabIcon('color-palette', 'color-palette-outline') }}
       />
     </Tabs>
   );

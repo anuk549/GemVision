@@ -50,6 +50,19 @@ export const TREATMENTS = [
   { label: 'Standard Heated', value: 'Heated' },
 ];
 
+export const AESTHETIC_STYLES = [
+  { label: 'Modern', value: 'Modern' },
+  { label: 'Vintage', value: 'Vintage' },
+  { label: 'Minimal', value: 'Minimal' },
+];
+
+export const PROMPT_PRESETS = [
+  'A ring with multiple lines of this gem',
+  'Art deco Ceylon sapphire pendant with filigree',
+  'Solitaire engagement ring with pavé diamond accents',
+  'Minimalist band featuring bezel-set royal blue sapphire',
+];
+
 export const DEFAULT_DESIGN_SPEC = {
   category: 'Ring',
   metal: '22KT Gold',
@@ -61,4 +74,6 @@ export const DEFAULT_DESIGN_SPEC = {
   stone_grade: 'AA (Fine Jewelry)',
   treatment: 'Heated',
   number_of_accent_stones: '0',
+  aesthetic_style: 'Modern',
+  prompt: 'A ring with multiple lines of this gem',
 };
