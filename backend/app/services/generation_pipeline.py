@@ -40,6 +40,7 @@ class GenerationPipelineCoordinator:
         Enriches user prompts with decoupled qualitative scale tokens,
         fine jewelry craftsmanship standards, and studio macro photography rules.
         """
+        import re
         user_p = (request.prompt or "").strip()
         gem = request.gemstone or "Blue Sapphire"
         cat = request.category or "Ring"
@@ -50,31 +51,69 @@ class GenerationPipelineCoordinator:
 
         # Decouple carats into qualitative scale tokens (prevents diffusion 2D scaling artifacts)
         if carat >= 3.5:
-            scale_cue = "large prominent centerpiece"
-        elif carat >= 1.5:
-            scale_cue = "balanced centerpiece"
+            scale_cue = "commanding centerpiece"
+        elif carat >= 1.8:
+            scale_cue = "prominent centerpiece"
         else:
             scale_cue = "delicate centerpiece"
 
-        base = user_p if user_p else f"A bespoke luxury {cat.lower()}"
+        if not user_p:
+            return (
+                f"A bespoke luxury {cat.lower()} featuring a {scale_cue} {carat:.2f}ct {request.color_grade or 'Royal Blue'} Ceylon {gem} "
+                f"held securely in an exquisite {setting.lower()} setting crafted in polished {metal}, "
+                f"{aesthetic.lower()} architectural contours, macro studio jewelry photography, "
+                f"sharp facet reflections, high refraction dispersion, specular highlights, dark neutral studio backdrop, 8k resolution"
+            )
 
-        # If user prompt already contains full studio instructions, retain it
         if "macro" in user_p.lower() and "studio" in user_p.lower():
             return user_p
 
-        tokens = [
-            base,
-            f"featuring a {scale_cue} {gem}",
-            f"in a refined {setting.lower()} setting",
-            f"crafted in polished {metal}",
+        core_vision = user_p
+        if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
+            core_vision = re.sub(
+                r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
+                "featuring multiple intertwining fluid bands encrusted with micro-pavé melee lines",
+                core_vision,
+                flags=re.IGNORECASE
+            )
+        elif re.search(r"\bhalo\b", core_vision, re.IGNORECASE) and not re.search(r"micro-pavé halo", core_vision, re.IGNORECASE):
+            core_vision = re.sub(r"\bhalo\b", "delicate micro-pavé brilliant-cut diamond halo", core_vision, flags=re.IGNORECASE)
+
+        core_vision = core_vision[0].upper() + core_vision[1:] if core_vision else core_vision
+
+        has_gem = "sapphire" in core_vision.lower() or "gem" in core_vision.lower()
+        has_metal = bool(re.search(r"gold|silver|platinum", core_vision, re.IGNORECASE))
+        has_setting = bool(re.search(r"prong|bezel|pave|channel|halo", core_vision, re.IGNORECASE))
+
+        color_str = f"{request.color_grade} " if request.color_grade else ""
+        stone_clause = (
+            f"highlighting the {scale_cue} {carat:.2f}ct {color_str}Ceylon {gem}"
+            if has_gem else
+            f"featuring a {scale_cue} {carat:.2f}ct {color_str}Ceylon {gem}"
+        )
+        setting_clause = "" if has_setting else f"secured in a refined {setting.lower()} mount"
+        metal_clause = "" if has_metal else f"crafted in lustrous {metal}"
+
+        studio_tokens = [
             f"{aesthetic.lower()} aesthetic contours",
-            "crisp macro studio jewelry product photography",
-            "clean neutral studio lighting",
-            "sharp facet brilliance",
+            "macro studio jewelry product photography",
+            "sharp facet reflections",
+            "high refraction dispersion",
             "specular highlights",
+            "neutral studio lighting",
             "8k resolution fine jewelry render"
         ]
-        return ", ".join(tokens)
+
+        clauses = [core_vision]
+        if request.color_grade and request.color_grade.lower() not in core_vision.lower():
+            clauses.append(stone_clause)
+        if setting_clause:
+            clauses.append(setting_clause)
+        if metal_clause:
+            clauses.append(metal_clause)
+        clauses.extend(studio_tokens)
+
+        return ", ".join([c for c in clauses if c])
 
     def detect_non_sapphire(self, prompt: str, gemstone: str) -> Optional[str]:
         p_lower = prompt.lower()
