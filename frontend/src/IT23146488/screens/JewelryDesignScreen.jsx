@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   AppText,
   Button,
@@ -22,7 +22,6 @@ import useForm from '../../hooks/useForm';
 import {
   AESTHETIC_STYLES,
   COLOR_GRADES,
-  DESIGN_STYLE_TAGS,
   GEMSTONE_TYPES,
   JEWELRY_TYPES,
   METAL_ALLOYS,
@@ -36,14 +35,25 @@ import { DesignShowcaseCard, ValuationCard } from '../components';
 
 const PAGE_SIZE = 4;
 
+const SPEC_TABS = [
+  { id: 'sapphire', label: '1. Sapphire', icon: 'diamond-outline' },
+  { id: 'metal', label: '2. Metal', icon: 'hardware-chip-outline' },
+  { id: 'setting', label: '3. Setting', icon: 'construct-outline' },
+  { id: 'style', label: '4. Style', icon: 'color-palette-outline' },
+];
+
+const CARAT_PILLS = ['1.50', '2.00', '2.50', '3.50', '5.00'];
+const METAL_WEIGHT_PILLS = ['3.0', '4.5', '6.0', '8.5', '12.0'];
+const ACCENT_PILLS = ['0', '12', '24', '36'];
+
 export default function JewelryDesignScreen() {
   const [prompt, setPrompt] = useState('');
   const [originalPrompt, setOriginalPrompt] = useState('');
   const [isEnhanced, setIsEnhanced] = useState(false);
   const [aestheticStyle, setAestheticStyle] = useState('Modern');
-  const [showAdvancedSpecs, setShowAdvancedSpecs] = useState(false);
+  const [activeTab, setActiveTab] = useState('sapphire');
 
-  // Physical specifications (Sapphire-focused defaults)
+  // Physical specifications (Ceylon Sapphire defaults)
   const [category, setCategory] = useState('Ring');
   const [metal, setMetal] = useState('22KT Gold');
   const [gemstone, setGemstone] = useState('Blue Sapphire');
@@ -119,17 +129,14 @@ export default function JewelryDesignScreen() {
     }
   };
 
-  const handleAppendStyleTag = (addon) => {
-    setPrompt((prev) => {
-      const trimmed = prev.trim();
-      if (!trimmed) return addon;
-      if (trimmed.includes(addon)) return trimmed;
-      return `${trimmed}, ${addon}`;
-    });
+  const handleClearPrompt = () => {
+    setPrompt('');
+    setIsEnhanced(false);
+    setOriginalPrompt('');
   };
 
   const handleGenerate = async () => {
-    const activePrompt = prompt.trim() || 'A ring with multiple lines of this gem';
+    const activePrompt = prompt.trim() || 'A bespoke ring featuring this gem';
     setShowProgress(true);
     setGenerating(true);
     setProgress(0.15);
@@ -238,44 +245,60 @@ export default function JewelryDesignScreen() {
     </View>
   );
 
+  const activeTabIndex = SPEC_TABS.findIndex((t) => t.id === activeTab);
+  const nextTabObj = activeTabIndex < SPEC_TABS.length - 1 ? SPEC_TABS[activeTabIndex + 1] : null;
+  const prevTabObj = activeTabIndex > 0 ? SPEC_TABS[activeTabIndex - 1] : null;
+
   return (
     <Screen
       title="Jewelry Design Lab"
       titleColor={colors.emerald}
       headerTop={brandHeader}
     >
-      {/* Generative Design Lab Card */}
+      {/* Generative Design Lab Studio Card */}
       <Card style={styles.labCard}>
         <AppText variant="body" color={colors.textMuted} style={styles.descriptionText}>
-          Describe your vision or provide parameters for the generative model. Focused on authentic Sri Lankan Blue & Yellow Sapphires.
+          Describe your jewelry vision and customize gemological parameters. Calibrated specifically for Ceylon Blue & Yellow Sapphires.
         </AppText>
 
+        {/* Prompt Header & Action Controls */}
         <View style={styles.labelRow}>
           <AppText variant="label" color={colors.emerald} style={styles.sectionLabel}>
             DESIGN PROMPT
           </AppText>
-          <Pressable
-            onPress={handleToggleEnhance}
-            style={[styles.enhanceButton, isEnhanced && styles.enhanceButtonActive]}
-          >
-            <Icon
-              name={isEnhanced ? 'sparkles' : 'sparkles-outline'}
-              size={13}
-              color={isEnhanced ? colors.emerald : colors.accent}
-            />
-            <AppText
-              variant="caption"
-              weight="700"
-              color={isEnhanced ? colors.emerald : colors.accent}
+          <View style={styles.promptActionGroup}>
+            {prompt.length > 0 && (
+              <Pressable onPress={handleClearPrompt} style={styles.clearButton}>
+                <Icon name="close-circle-outline" size={13} color={colors.textMuted} />
+                <AppText variant="caption" weight="600" color={colors.textMuted}>
+                  Clear
+                </AppText>
+              </Pressable>
+            )}
+            <Pressable
+              onPress={handleToggleEnhance}
+              style={[styles.enhanceButton, isEnhanced && styles.enhanceButtonActive]}
             >
-              {isEnhanced ? 'Revert Prompt' : '✨ Enhance Prompt'}
-            </AppText>
-          </Pressable>
+              <Icon
+                name={isEnhanced ? 'refresh-outline' : 'sparkles-outline'}
+                size={13}
+                color={isEnhanced ? colors.emerald : colors.accent}
+              />
+              <AppText
+                variant="caption"
+                weight="700"
+                color={isEnhanced ? colors.emerald : colors.accent}
+              >
+                {isEnhanced ? 'Revert' : 'Enhance'}
+              </AppText>
+            </Pressable>
+          </View>
         </View>
 
+        {/* Multiline Prompt Input */}
         <Input
           multiline
-          placeholder="e.g. A ring with multiple lines of this gem"
+          placeholder="e.g. A bespoke ring with multiple intertwining lines holding this gemstone securely"
           value={prompt}
           onChangeText={(text) => {
             setPrompt(text);
@@ -299,41 +322,283 @@ export default function JewelryDesignScreen() {
               <AppText variant="caption" weight="700" color={colors.text}>
                 Ceylon Sapphires (Blue & Yellow)
               </AppText>{' '}
-              using Colombo spot rates and real market power-law models (R² = 0.836). Because you specified{' '}
+              using Colombo spot rates and real market power-law models. Because you specified{' '}
               <AppText variant="caption" weight="600" color={colors.warning}>
                 {detectedNonSapphire}
               </AppText>
-              , the generated quotation is an approximate baseline calculation and may vary from specialized {detectedNonSapphire} market rates.
+              , the estimated cost price is an approximate baseline and may not accurately reflect specialized {detectedNonSapphire} market pricing.
             </AppText>
           </View>
         )}
 
-        {/* Quick Design Presets */}
-        <AppText variant="caption" color={colors.textDim} style={styles.presetsLabel}>
-          Tap to add architectural design details:
-        </AppText>
-        <View style={styles.tagWrap}>
-          {DESIGN_STYLE_TAGS.map((tag) => (
-            <Chip
-              key={tag.label}
-              label={tag.label}
-              color={colors.sapphire}
-              onPress={() => handleAppendStyleTag(tag.promptAddon)}
-            />
-          ))}
+        {/* Integrated Specification & BOM Parameters Studio */}
+        <View style={styles.specStudioContainer}>
+          {/* Studio Header & Live Configuration Summary */}
+          <View style={styles.specStudioHeader}>
+            <View style={styles.specHeaderTitleRow}>
+              <Icon name="options-outline" size={15} color={colors.accent} />
+              <AppText variant="label" color={colors.accent} style={styles.specHeaderTitle}>
+                SAPPHIRE & BOM SPECIFICATIONS
+              </AppText>
+            </View>
+            <View style={styles.liveSummaryBadge}>
+              <AppText variant="caption" color={colors.textDim} numberOfLines={1}>
+                {form.values.carats || '2.5'}ct {colorGrade} · {form.values.metalWeight || '5'}g {metal} · {setting} · {category}
+              </AppText>
+            </View>
+          </View>
+
+          {/* Scrollable Step Tabs */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabScrollContainer}
+          >
+            {SPEC_TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <Pressable
+                  key={tab.id}
+                  onPress={() => setActiveTab(tab.id)}
+                  style={[styles.stepTab, isActive && styles.stepTabActive]}
+                >
+                  <Icon
+                    name={tab.icon}
+                    size={14}
+                    color={isActive ? colors.emerald : colors.textMuted}
+                  />
+                  <AppText
+                    variant="caption"
+                    weight={isActive ? '700' : '500'}
+                    color={isActive ? colors.emerald : colors.textMuted}
+                  >
+                    {tab.label}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {/* Active Specification Tab Content */}
+          <View style={styles.tabContentCard}>
+            {/* Tab 1: Center Sapphire */}
+            {activeTab === 'sapphire' && (
+              <View style={styles.tabPane}>
+                <AppText variant="label" color={colors.emerald} style={styles.subfieldLabel}>
+                  Center Gemstone (Sapphire Calibration Focus)
+                </AppText>
+                <ChipGroup
+                  options={GEMSTONE_TYPES}
+                  value={gemstone}
+                  onChange={setGemstone}
+                  color={gemstone === 'Yellow Sapphire' ? colors.warning : colors.sapphire}
+                />
+
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Color Shade
+                </AppText>
+                <ChipGroup
+                  options={COLOR_GRADES}
+                  value={colorGrade}
+                  onChange={setColorGrade}
+                  color={colors.sapphire}
+                />
+
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Quality Grade
+                </AppText>
+                <ChipGroup
+                  options={STONE_GRADES}
+                  value={stoneGrade}
+                  onChange={setStoneGrade}
+                  color={colors.emerald}
+                />
+
+                {/* Carat Quick Pills & Decimal Input */}
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Sapphire Carats (ct)
+                </AppText>
+                <View style={styles.quickPillRow}>
+                  {CARAT_PILLS.map((pill) => (
+                    <Chip
+                      key={pill}
+                      label={`${pill}ct`}
+                      active={form.values.carats === pill}
+                      color={colors.emerald}
+                      onPress={() => form.handleChange('carats')(pill)}
+                    />
+                  ))}
+                </View>
+                <Input
+                  label="Exact Carat Mass"
+                  required
+                  keyboardType="decimal-pad"
+                  value={form.values.carats}
+                  onChangeText={form.handleChange('carats')}
+                  onBlur={form.handleBlur('carats')}
+                  error={form.errors.carats}
+                  placeholder="2.50"
+                  style={styles.pillInput}
+                />
+
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Gem Treatment
+                </AppText>
+                <ChipGroup
+                  options={TREATMENTS}
+                  value={treatment}
+                  onChange={setTreatment}
+                />
+              </View>
+            )}
+
+            {/* Tab 2: Metal & Mass */}
+            {activeTab === 'metal' && (
+              <View style={styles.tabPane}>
+                <AppText variant="label" color={colors.accent} style={styles.subfieldLabel}>
+                  Precious Metal Alloy
+                </AppText>
+                <ChipGroup
+                  options={METAL_ALLOYS}
+                  value={metal}
+                  onChange={setMetal}
+                  color={colors.accent}
+                />
+
+                {/* Metal Weight Quick Pills & Input */}
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Metal Mass (Grams)
+                </AppText>
+                <View style={styles.quickPillRow}>
+                  {METAL_WEIGHT_PILLS.map((pill) => (
+                    <Chip
+                      key={pill}
+                      label={`${pill}g`}
+                      active={form.values.metalWeight === pill}
+                      color={colors.accent}
+                      onPress={() => form.handleChange('metalWeight')(pill)}
+                    />
+                  ))}
+                </View>
+                <Input
+                  label="Exact Metal Mass (g)"
+                  required
+                  keyboardType="decimal-pad"
+                  value={form.values.metalWeight}
+                  onChangeText={form.handleChange('metalWeight')}
+                  onBlur={form.handleBlur('metalWeight')}
+                  error={form.errors.metalWeight}
+                  placeholder="5.0"
+                  style={styles.pillInput}
+                />
+                <AppText variant="caption" color={colors.textDim} style={styles.hintText}>
+                  Colombo spot rates: 22KT Gold (~LKR 33,500/g) · Platinum (~LKR 19,500/g) · Silver (~LKR 950/g)
+                </AppText>
+              </View>
+            )}
+
+            {/* Tab 3: Setting & Accents */}
+            {activeTab === 'setting' && (
+              <View style={styles.tabPane}>
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Setting Architecture
+                </AppText>
+                <ChipGroup
+                  options={SETTING_STYLES}
+                  value={setting}
+                  onChange={setSetting}
+                  color={colors.sapphire}
+                />
+
+                {/* Accent Count Quick Pills & Input */}
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Accent Stones (Melee Diamonds / Sapphires)
+                </AppText>
+                <View style={styles.quickPillRow}>
+                  {ACCENT_PILLS.map((pill) => (
+                    <Chip
+                      key={pill}
+                      label={pill === '0' ? 'Solitaire (0)' : `${pill} Melee`}
+                      active={form.values.accents === pill}
+                      color={colors.sapphire}
+                      onPress={() => form.handleChange('accents')(pill)}
+                    />
+                  ))}
+                </View>
+                <Input
+                  label="Custom Accent Count"
+                  keyboardType="number-pad"
+                  value={form.values.accents}
+                  onChangeText={form.handleChange('accents')}
+                  placeholder="0"
+                  style={styles.pillInput}
+                />
+
+                <UploadCard
+                  value={referenceImage}
+                  onChange={setReferenceImage}
+                  title="Upload Reference Loose Sapphire Photo"
+                  subtitle="Audited with Gemini Vision for setting style & melee count"
+                  style={styles.uploadCard}
+                />
+              </View>
+            )}
+
+            {/* Tab 4: Category & Style */}
+            {activeTab === 'style' && (
+              <View style={styles.tabPane}>
+                <AppText variant="label" color={colors.textMuted} style={styles.subfieldLabel}>
+                  Jewelry Category
+                </AppText>
+                <ChipGroup
+                  options={JEWELRY_TYPES}
+                  value={category}
+                  onChange={setCategory}
+                  color={colors.sapphire}
+                />
+
+                <AppText variant="label" color={colors.emerald} style={styles.subfieldLabel}>
+                  Aesthetic Style
+                </AppText>
+                <ChipGroup
+                  options={AESTHETIC_STYLES}
+                  value={aestheticStyle}
+                  onChange={setAestheticStyle}
+                  color={colors.emerald}
+                />
+              </View>
+            )}
+
+            {/* Step Navigation Controls */}
+            <View style={styles.tabStepperRow}>
+              {prevTabObj ? (
+                <Pressable
+                  onPress={() => setActiveTab(prevTabObj.id)}
+                  style={styles.stepNavButton}
+                >
+                  <Icon name="arrow-back" size={13} color={colors.textMuted} />
+                  <AppText variant="caption" color={colors.textMuted}>
+                    {prevTabObj.label}
+                  </AppText>
+                </Pressable>
+              ) : (
+                <View />
+              )}
+
+              {nextTabObj && (
+                <Pressable
+                  onPress={() => setActiveTab(nextTabObj.id)}
+                  style={[styles.stepNavButton, styles.stepNavButtonNext]}
+                >
+                  <AppText variant="caption" weight="700" color={colors.emerald}>
+                    Next: {nextTabObj.label}
+                  </AppText>
+                  <Icon name="arrow-forward" size={13} color={colors.emerald} />
+                </Pressable>
+              )}
+            </View>
+          </View>
         </View>
-
-        <AppText variant="label" color={colors.emerald} style={styles.sectionLabel}>
-          AESTHETIC STYLE
-        </AppText>
-
-        <ChipGroup
-          options={AESTHETIC_STYLES}
-          value={aestheticStyle}
-          onChange={setAestheticStyle}
-          color={colors.emerald}
-          style={styles.chipGroup}
-        />
 
         {/* Generate Design Action */}
         <Button
@@ -352,7 +617,7 @@ export default function JewelryDesignScreen() {
           <View style={styles.progressContainer}>
             <LoadingBar
               progress={progress}
-              label={generating ? 'Generating bespoke model...' : 'Design synthesized'}
+              label={generating ? 'Synthesizing bespoke CAD jewelry model...' : 'Design synthesized'}
               labelColor={colors.emerald}
               showPercentage
               color={colors.emerald}
@@ -423,109 +688,6 @@ export default function JewelryDesignScreen() {
           }}
         />
       )}
-
-      {/* Expandable Physical Parameters Engine */}
-      <Card style={styles.specsCard}>
-        <Pressable
-          onPress={() => setShowAdvancedSpecs((prev) => !prev)}
-          style={styles.specsHeader}
-        >
-          <View style={styles.specsTitleRow}>
-            <Icon name="options-outline" size={18} color={colors.accent} />
-            <AppText variant="subtitle" weight="600">
-              Sapphire Specifications & BOM Parameters
-            </AppText>
-          </View>
-          <Icon
-            name={showAdvancedSpecs ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={colors.textMuted}
-          />
-        </Pressable>
-
-        {showAdvancedSpecs && (
-          <View style={styles.specsContent}>
-            <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
-              Jewelry Category
-            </AppText>
-            <ChipGroup options={JEWELRY_TYPES} value={category} onChange={setCategory} />
-
-            <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
-              Precious Metal Alloy
-            </AppText>
-            <ChipGroup options={METAL_ALLOYS} value={metal} onChange={setMetal} color={colors.accent} />
-
-            <AppText variant="label" color={colors.emerald} style={styles.fieldLabel}>
-              Center Gemstone (Sapphire Calibration Focus)
-            </AppText>
-            <ChipGroup
-              options={GEMSTONE_TYPES}
-              value={gemstone}
-              onChange={setGemstone}
-              color={gemstone === 'Yellow Sapphire' ? colors.warning : colors.sapphire}
-            />
-
-            <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
-              Setting Architecture
-            </AppText>
-            <ChipGroup options={SETTING_STYLES} value={setting} onChange={setSetting} />
-
-            <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
-              Sapphire Shade & Quality Grade
-            </AppText>
-            <ChipGroup options={COLOR_GRADES} value={colorGrade} onChange={setColorGrade} color={colors.sapphire} />
-            <View style={styles.subGap} />
-            <ChipGroup options={STONE_GRADES} value={stoneGrade} onChange={setStoneGrade} color={colors.emerald} />
-
-            <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
-              Gem Treatment
-            </AppText>
-            <ChipGroup options={TREATMENTS} value={treatment} onChange={setTreatment} />
-
-            <View style={styles.grid}>
-              <Input
-                label="Sapphire Carats"
-                required
-                keyboardType="decimal-pad"
-                value={form.values.carats}
-                onChangeText={form.handleChange('carats')}
-                onBlur={form.handleBlur('carats')}
-                error={form.errors.carats}
-                placeholder="2.50"
-                style={styles.half}
-              />
-              <Input
-                label="Metal Mass (g)"
-                required
-                keyboardType="decimal-pad"
-                value={form.values.metalWeight}
-                onChangeText={form.handleChange('metalWeight')}
-                onBlur={form.handleBlur('metalWeight')}
-                error={form.errors.metalWeight}
-                placeholder="5.0"
-                style={styles.half}
-              />
-            </View>
-
-            <Input
-              label="Accent Stone Count (Melee)"
-              keyboardType="number-pad"
-              value={form.values.accents}
-              onChangeText={form.handleChange('accents')}
-              placeholder="0"
-              style={styles.full}
-            />
-
-            <UploadCard
-              value={referenceImage}
-              onChange={setReferenceImage}
-              title="Upload Reference Loose Sapphire Photo"
-              subtitle="Audited with Gemini Vision for setting style & melee count"
-              style={styles.uploadCard}
-            />
-          </View>
-        )}
-      </Card>
 
       {/* Recent Syntheses / Quotes History */}
       <View style={styles.historySection}>
@@ -612,6 +774,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  promptActionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  clearButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(94, 112, 137, 0.15)',
+  },
   enhanceButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -631,7 +807,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   promptTextInput: {
-    minHeight: 110,
+    minHeight: 95,
     fontSize: 15,
     lineHeight: 22,
   },
@@ -652,22 +828,109 @@ const styles = StyleSheet.create({
   warningText: {
     lineHeight: 19,
   },
-  presetsLabel: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
+  specStudioContainer: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
   },
-  tagWrap: {
+  specStudioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  specHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  specHeaderTitle: {
+    fontSize: 11,
+    letterSpacing: 1,
+    fontWeight: '700',
+  },
+  liveSummaryBadge: {
+    maxWidth: '48%',
+  },
+  tabScrollContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  stepTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.divider,
+  },
+  stepTabActive: {
+    backgroundColor: 'rgba(37, 192, 138, 0.15)',
+    borderColor: colors.emerald,
+  },
+  tabContentCard: {
+    padding: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  tabPane: {
+    gap: spacing.xs,
+  },
+  subfieldLabel: {
+    fontSize: 12,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xxs,
+  },
+  quickPillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
   },
-  chipGroup: {
-    marginTop: spacing.xs,
-    marginBottom: spacing.xl,
+  pillInput: {
+    marginTop: spacing.xxs,
+  },
+  hintText: {
+    marginTop: spacing.xxs,
+    fontSize: 11,
+  },
+  uploadCard: {
+    marginTop: spacing.md,
+  },
+  tabStepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+  },
+  stepNavButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: spacing.xs,
+  },
+  stepNavButtonNext: {
+    backgroundColor: 'rgba(37, 192, 138, 0.1)',
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
   },
   generateButton: {
-    marginTop: spacing.sm,
+    marginTop: spacing.lg,
     height: 52,
   },
   generateButtonText: {
@@ -723,48 +986,6 @@ const styles = StyleSheet.create({
   quickCostBreakdown: {
     marginTop: spacing.md,
     paddingTop: spacing.xs,
-  },
-  specsCard: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-  },
-  specsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  specsTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  specsContent: {
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  fieldLabel: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  subGap: {
-    height: spacing.xs,
-  },
-  grid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  half: {
-    width: '47%',
-  },
-  full: {
-    marginTop: spacing.xs,
-  },
-  uploadCard: {
-    marginTop: spacing.md,
   },
   historySection: {
     marginTop: spacing.md,
