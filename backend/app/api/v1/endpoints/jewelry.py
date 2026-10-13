@@ -159,3 +159,18 @@ async def get_pipeline_options():
             },
         ]
     }
+
+
+@router.post("/enhance-prompt")
+async def enhance_design_prompt(request: JewelryDesignRequest):
+    """
+    Enriches a user's vision into a studio diffusion prompt
+    incorporating decoupled visual scale, specular facets, and professional studio lighting.
+    """
+    enhanced = generation_pipeline.build_studio_conditioned_prompt(request)
+    return {
+        "original_prompt": request.prompt,
+        "enhanced_prompt": enhanced,
+        "studio_instructions_applied": True,
+    }
+

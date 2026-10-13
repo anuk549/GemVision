@@ -4,6 +4,7 @@ import {
   AppText,
   Button,
   Card,
+  Chip,
   ChipGroup,
   Icon,
   Input,
@@ -21,24 +22,28 @@ import useForm from '../../hooks/useForm';
 import {
   AESTHETIC_STYLES,
   COLOR_GRADES,
+  DESIGN_STYLE_TAGS,
   GEMSTONE_TYPES,
   JEWELRY_TYPES,
   METAL_ALLOYS,
+  NON_SAPPHIRE_GEMS,
   SETTING_STYLES,
   STONE_GRADES,
   TREATMENTS,
 } from '../constants';
-import { generateDesignAndQuote } from '../services';
+import { buildClientEnhancedPrompt, generateDesignAndQuote } from '../services';
 import { DesignShowcaseCard, ValuationCard } from '../components';
 
 const PAGE_SIZE = 4;
 
 export default function JewelryDesignScreen() {
   const [prompt, setPrompt] = useState('');
+  const [originalPrompt, setOriginalPrompt] = useState('');
+  const [isEnhanced, setIsEnhanced] = useState(false);
   const [aestheticStyle, setAestheticStyle] = useState('Modern');
   const [showAdvancedSpecs, setShowAdvancedSpecs] = useState(false);
 
-  // Physical specifications
+  // Physical specifications (Sapphire-focused defaults)
   const [category, setCategory] = useState('Ring');
   const [metal, setMetal] = useState('22KT Gold');
   const [gemstone, setGemstone] = useState('Blue Sapphire');
@@ -77,6 +82,51 @@ export default function JewelryDesignScreen() {
       accents: [rules.digits()],
     },
   });
+
+  // Real-time detection of non-sapphire gemstones in prompt or dropdown
+  const detectedNonSapphire = useMemo(() => {
+    const text = prompt.toLowerCase();
+    for (const gem of NON_SAPPHIRE_GEMS) {
+      if (text.includes(gem)) {
+        return gem.charAt(0).toUpperCase() + gem.slice(1);
+      }
+    }
+    if (gemstone === 'Other') {
+      return 'Non-Sapphire Gemstone';
+    }
+    return null;
+  }, [prompt, gemstone]);
+
+  // AI Prompt Enhancement handler
+  const handleToggleEnhance = () => {
+    if (isEnhanced) {
+      setPrompt(originalPrompt);
+      setIsEnhanced(false);
+    } else {
+      setOriginalPrompt(prompt);
+      const enhanced = buildClientEnhancedPrompt({
+        prompt: prompt || 'A bespoke ring featuring this gem',
+        category,
+        metal,
+        gemstone,
+        colorGrade,
+        setting,
+        aestheticStyle,
+        carats: form.values.carats,
+      });
+      setPrompt(enhanced);
+      setIsEnhanced(true);
+    }
+  };
+
+  const handleAppendStyleTag = (addon) => {
+    setPrompt((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return addon;
+      if (trimmed.includes(addon)) return trimmed;
+      return `${trimmed}, ${addon}`;
+    });
+  };
 
   const handleGenerate = async () => {
     const activePrompt = prompt.trim() || 'A ring with multiple lines of this gem';
@@ -139,7 +189,6 @@ export default function JewelryDesignScreen() {
         id: String(Date.now()),
         title: spec.prompt.slice(0, 24) + (spec.prompt.length > 24 ? '…' : ''),
         style: spec.aesthetic_style,
-        metal: spec.metal,
         gemstone: `${spec.gemstone} (${spec.gemstone_weight_ct}ct)`,
         price: fairPrice ? `LKR ${fairPrice.toLocaleString()}` : '—',
       },
@@ -149,8 +198,8 @@ export default function JewelryDesignScreen() {
     setPopup({
       visible: true,
       type: 'success',
-      title: 'Design Synthesized',
-      message: `FLUX.2 Generative render ready with Gemini Vision audit and dynamic LKR valuation.`,
+      title: 'Design & Valuation Ready',
+      message: `FLUX.2 design generated with estimated fair market price: LKR ${fairPrice.toLocaleString()}.`,
     });
   };
 
@@ -198,21 +247,81 @@ export default function JewelryDesignScreen() {
       {/* Generative Design Lab Card */}
       <Card style={styles.labCard}>
         <AppText variant="body" color={colors.textMuted} style={styles.descriptionText}>
-          Describe your vision or provide parameters for the generative model.
+          Describe your vision or provide parameters for the generative model. Focused on authentic Sri Lankan Blue & Yellow Sapphires.
         </AppText>
 
-        <AppText variant="label" color={colors.emerald} style={styles.sectionLabel}>
-          DESIGN PROMPT
-        </AppText>
+        <View style={styles.labelRow}>
+          <AppText variant="label" color={colors.emerald} style={styles.sectionLabel}>
+            DESIGN PROMPT
+          </AppText>
+          <Pressable
+            onPress={handleToggleEnhance}
+            style={[styles.enhanceButton, isEnhanced && styles.enhanceButtonActive]}
+          >
+            <Icon
+              name={isEnhanced ? 'sparkles' : 'sparkles-outline'}
+              size={13}
+              color={isEnhanced ? colors.emerald : colors.accent}
+            />
+            <AppText
+              variant="caption"
+              weight="700"
+              color={isEnhanced ? colors.emerald : colors.accent}
+            >
+              {isEnhanced ? 'Revert Prompt' : '✨ Enhance Prompt'}
+            </AppText>
+          </Pressable>
+        </View>
 
         <Input
           multiline
           placeholder="e.g. A ring with multiple lines of this gem"
           value={prompt}
-          onChangeText={setPrompt}
+          onChangeText={(text) => {
+            setPrompt(text);
+            if (isEnhanced) setIsEnhanced(false);
+          }}
           style={styles.promptInputWrapper}
           inputStyle={styles.promptTextInput}
         />
+
+        {/* Real-time Non-Sapphire Pricing Calibration Notice */}
+        {detectedNonSapphire && (
+          <View style={styles.warningBox}>
+            <View style={styles.warningHeaderRow}>
+              <Icon name="alert-circle" size={16} color={colors.warning} />
+              <AppText variant="caption" weight="700" color={colors.warning}>
+                PRICING CALIBRATION NOTICE ({detectedNonSapphire.toUpperCase()})
+              </AppText>
+            </View>
+            <AppText variant="caption" color={colors.textMuted} style={styles.warningText}>
+              Our dynamic valuation engine is calibrated specifically on Sri Lankan{' '}
+              <AppText variant="caption" weight="700" color={colors.text}>
+                Ceylon Sapphires (Blue & Yellow)
+              </AppText>{' '}
+              using Colombo spot rates and real market power-law models (R² = 0.836). Because you specified{' '}
+              <AppText variant="caption" weight="600" color={colors.warning}>
+                {detectedNonSapphire}
+              </AppText>
+              , the generated quotation is an approximate baseline calculation and may vary from specialized {detectedNonSapphire} market rates.
+            </AppText>
+          </View>
+        )}
+
+        {/* Quick Design Presets */}
+        <AppText variant="caption" color={colors.textDim} style={styles.presetsLabel}>
+          Tap to add architectural design details:
+        </AppText>
+        <View style={styles.tagWrap}>
+          {DESIGN_STYLE_TAGS.map((tag) => (
+            <Chip
+              key={tag.label}
+              label={tag.label}
+              color={colors.sapphire}
+              onPress={() => handleAppendStyleTag(tag.promptAddon)}
+            />
+          ))}
+        </View>
 
         <AppText variant="label" color={colors.emerald} style={styles.sectionLabel}>
           AESTHETIC STYLE
@@ -243,7 +352,7 @@ export default function JewelryDesignScreen() {
           <View style={styles.progressContainer}>
             <LoadingBar
               progress={progress}
-              label={generating ? 'Generating...' : 'Synthesized'}
+              label={generating ? 'Generating bespoke model...' : 'Design synthesized'}
               labelColor={colors.emerald}
               showPercentage
               color={colors.emerald}
@@ -253,12 +362,55 @@ export default function JewelryDesignScreen() {
         )}
       </Card>
 
+      {/* Prominent Estimated Cost Price & Valuation Banner */}
+      {generatedDesign?.valuation && (
+        <Card style={styles.valuationHeroCard}>
+          <View style={styles.valuationHeroTop}>
+            <View>
+              <AppText variant="caption" color={colors.textMuted}>
+                ESTIMATED FAIR MARKET PRICE
+              </AppText>
+              <AppText variant="h2" color={colors.emerald} style={styles.priceHeroText}>
+                LKR {generatedDesign.valuation.p50_fair_market_price_lkr?.toLocaleString() || '—'}
+              </AppText>
+            </View>
+            <View style={styles.verifiedBadge}>
+              <Icon name="shield-checkmark" size={14} color={colors.emerald} />
+              <AppText variant="caption" weight="700" color={colors.emerald}>
+                Verified BOM
+              </AppText>
+            </View>
+          </View>
+
+          <View style={styles.marketRangeRow}>
+            <View style={styles.rangeTile}>
+              <AppText variant="caption" color={colors.textDim}>Wholesale Floor (P10)</AppText>
+              <AppText variant="bodyStrong" color={colors.text}>
+                LKR {generatedDesign.valuation.p10_wholesale_floor_lkr?.toLocaleString() || '—'}
+              </AppText>
+            </View>
+            <View style={styles.rangeTile}>
+              <AppText variant="caption" color={colors.textDim}>Showroom Retail (P90)</AppText>
+              <AppText variant="bodyStrong" color={colors.ruby}>
+                LKR {generatedDesign.valuation.p90_showroom_ceiling_lkr?.toLocaleString() || '—'}
+              </AppText>
+            </View>
+          </View>
+
+          <View style={styles.quickCostBreakdown}>
+            <AppText variant="caption" color={colors.textMuted}>
+              Cost Summary: Center Gem LKR {generatedDesign.bom_breakdown?.gemstone_cost_lkr?.toLocaleString()} · Metal LKR {generatedDesign.bom_breakdown?.metal_cost_lkr?.toLocaleString()} · Wadakuliya Labor LKR {generatedDesign.bom_breakdown?.labor_cost_lkr?.toLocaleString()}
+            </AppText>
+          </View>
+        </Card>
+      )}
+
       {/* Generated Design Showcase */}
       {generatedDesign && (
         <DesignShowcaseCard design={generatedDesign} />
       )}
 
-      {/* Dynamic BOM & Valuation Certificate */}
+      {/* Dynamic Itemized BOM & Valuation Certificate */}
       {generatedDesign?.valuation && (
         <ValuationCard
           estimate={generatedDesign}
@@ -281,7 +433,7 @@ export default function JewelryDesignScreen() {
           <View style={styles.specsTitleRow}>
             <Icon name="options-outline" size={18} color={colors.accent} />
             <AppText variant="subtitle" weight="600">
-              Physical Specification Engine
+              Sapphire Specifications & BOM Parameters
             </AppText>
           </View>
           <Icon
@@ -303,10 +455,15 @@ export default function JewelryDesignScreen() {
             </AppText>
             <ChipGroup options={METAL_ALLOYS} value={metal} onChange={setMetal} color={colors.accent} />
 
-            <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
-              Center Gemstone
+            <AppText variant="label" color={colors.emerald} style={styles.fieldLabel}>
+              Center Gemstone (Sapphire Calibration Focus)
             </AppText>
-            <ChipGroup options={GEMSTONE_TYPES} value={gemstone} onChange={setGemstone} color={colors.sapphire} />
+            <ChipGroup
+              options={GEMSTONE_TYPES}
+              value={gemstone}
+              onChange={setGemstone}
+              color={gemstone === 'Yellow Sapphire' ? colors.warning : colors.sapphire}
+            />
 
             <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
               Setting Architecture
@@ -314,11 +471,11 @@ export default function JewelryDesignScreen() {
             <ChipGroup options={SETTING_STYLES} value={setting} onChange={setSetting} />
 
             <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
-              Quality & Color Grade
+              Sapphire Shade & Quality Grade
             </AppText>
-            <ChipGroup options={STONE_GRADES} value={stoneGrade} onChange={setStoneGrade} color={colors.emerald} />
+            <ChipGroup options={COLOR_GRADES} value={colorGrade} onChange={setColorGrade} color={colors.sapphire} />
             <View style={styles.subGap} />
-            <ChipGroup options={COLOR_GRADES} value={colorGrade} onChange={setColorGrade} color={colors.topaz} />
+            <ChipGroup options={STONE_GRADES} value={stoneGrade} onChange={setStoneGrade} color={colors.emerald} />
 
             <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
               Gem Treatment
@@ -327,7 +484,7 @@ export default function JewelryDesignScreen() {
 
             <View style={styles.grid}>
               <Input
-                label="Center Carats"
+                label="Sapphire Carats"
                 required
                 keyboardType="decimal-pad"
                 value={form.values.carats}
@@ -362,7 +519,7 @@ export default function JewelryDesignScreen() {
             <UploadCard
               value={referenceImage}
               onChange={setReferenceImage}
-              title="Upload Reference Jewelry Sketch / Photo"
+              title="Upload Reference Loose Sapphire Photo"
               subtitle="Audited with Gemini Vision for setting style & melee count"
               style={styles.uploadCard}
             />
@@ -439,16 +596,36 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   descriptionText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: spacing.lg,
+    fontSize: 14,
+    lineHeight: 21,
+    marginBottom: spacing.md,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
   sectionLabel: {
     letterSpacing: 1.2,
     fontSize: 12,
     fontWeight: '700',
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
+  },
+  enhanceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(233, 185, 73, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(233, 185, 73, 0.3)',
+  },
+  enhanceButtonActive: {
+    backgroundColor: 'rgba(37, 192, 138, 0.15)',
+    borderColor: colors.emerald,
   },
   promptInputWrapper: {
     marginTop: spacing.xs,
@@ -457,6 +634,33 @@ const styles = StyleSheet.create({
     minHeight: 110,
     fontSize: 15,
     lineHeight: 22,
+  },
+  warningBox: {
+    backgroundColor: 'rgba(233, 162, 59, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(233, 162, 59, 0.35)',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    gap: spacing.xs,
+  },
+  warningHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  warningText: {
+    lineHeight: 19,
+  },
+  presetsLabel: {
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  tagWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
   chipGroup: {
     marginTop: spacing.xs,
@@ -473,6 +677,51 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginTop: spacing.lg,
+    paddingTop: spacing.xs,
+  },
+  valuationHeroCard: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1.5,
+    borderColor: colors.emerald,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginTop: spacing.md,
+  },
+  valuationHeroTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  priceHeroText: {
+    marginTop: spacing.xxs,
+    fontWeight: '800',
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(37, 192, 138, 0.15)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+  },
+  marketRangeRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  rangeTile: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    gap: spacing.xxs,
+  },
+  quickCostBreakdown: {
+    marginTop: spacing.md,
     paddingTop: spacing.xs,
   },
   specsCard: {

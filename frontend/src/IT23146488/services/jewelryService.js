@@ -38,6 +38,35 @@ export const fetchGemstoneCatalog = async () => {
   }
 };
 
+export const buildClientEnhancedPrompt = ({
+  prompt = '',
+  category = 'Ring',
+  metal = '22KT Gold',
+  gemstone = 'Blue Sapphire',
+  colorGrade = 'Royal Blue',
+  setting = 'Prong',
+  aestheticStyle = 'Modern',
+  carats = '2.50',
+}) => {
+  const c = Number(carats) || 2.0;
+  const scale = c >= 3.0 ? 'commanding centerpiece' : c >= 1.5 ? 'prominent centerpiece' : 'delicate centerpiece';
+  const baseVision = prompt.trim() || `A bespoke luxury ${category.toLowerCase()}`;
+  const stoneName = `${colorGrade} ${gemstone}`;
+  return `${baseVision}, featuring a ${scale} ${stoneName} secured in a refined ${setting.toLowerCase()} setting crafted in polished ${metal}, ${aestheticStyle.toLowerCase()} aesthetic contours, crisp macro studio jewelry photography, sharp facet brilliance, specular highlights, neutral studio backdrop, 8k resolution`;
+};
+
+export const enhancePrompt = async (promptData) => {
+  try {
+    const response = await apiClient.post(`${API_PREFIX}/jewelry/enhance-prompt`, promptData);
+    if (response?.enhanced_prompt) {
+      return response.enhanced_prompt;
+    }
+    return buildClientEnhancedPrompt(promptData);
+  } catch {
+    return buildClientEnhancedPrompt(promptData);
+  }
+};
+
 export const generateDesignAndQuote = async (specs, imageAsset = null) => {
   const form = new FormData();
   form.append('category', specs.category);

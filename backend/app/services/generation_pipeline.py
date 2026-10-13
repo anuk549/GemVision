@@ -16,6 +16,12 @@ from ...reusable_components.image_utils import (
 
 logger = logging.getLogger(__name__)
 
+NON_SAPPHIRE_KEYWORDS = [
+    "ruby", "emerald", "diamond", "tanzanite", "alexandrite", "opal",
+    "garnet", "amethyst", "tourmaline", "topaz", "aquamarine", "peridot",
+    "spinel", "pearl", "zircon", "quartz", "jade", "tsavorite"
+]
+
 
 class GenerationPipelineCoordinator:
     """
@@ -28,13 +34,67 @@ class GenerationPipelineCoordinator:
         Step 3: FLUX Inpainting with realistic prong overlap
     """
 
+    def build_studio_conditioned_prompt(self, request: JewelryDesignRequest) -> str:
+        """
+        Base Prompt Instruction Engine:
+        Enriches user prompts with decoupled qualitative scale tokens,
+        fine jewelry craftsmanship standards, and studio macro photography rules.
+        """
+        user_p = (request.prompt or "").strip()
+        gem = request.gemstone or "Blue Sapphire"
+        cat = request.category or "Ring"
+        metal = request.metal or "22KT Gold"
+        setting = request.setting_type or "Prong"
+        aesthetic = request.aesthetic_style.value if hasattr(request.aesthetic_style, "value") else str(request.aesthetic_style or "Modern")
+        carat = float(request.gemstone_weight_ct or 2.5)
+
+        # Decouple carats into qualitative scale tokens (prevents diffusion 2D scaling artifacts)
+        if carat >= 3.5:
+            scale_cue = "large prominent centerpiece"
+        elif carat >= 1.5:
+            scale_cue = "balanced centerpiece"
+        else:
+            scale_cue = "delicate centerpiece"
+
+        base = user_p if user_p else f"A bespoke luxury {cat.lower()}"
+
+        # If user prompt already contains full studio instructions, retain it
+        if "macro" in user_p.lower() and "studio" in user_p.lower():
+            return user_p
+
+        tokens = [
+            base,
+            f"featuring a {scale_cue} {gem}",
+            f"in a refined {setting.lower()} setting",
+            f"crafted in polished {metal}",
+            f"{aesthetic.lower()} aesthetic contours",
+            "crisp macro studio jewelry product photography",
+            "clean neutral studio lighting",
+            "sharp facet brilliance",
+            "specular highlights",
+            "8k resolution fine jewelry render"
+        ]
+        return ", ".join(tokens)
+
+    def detect_non_sapphire(self, prompt: str, gemstone: str) -> Optional[str]:
+        p_lower = prompt.lower()
+        for keyword in NON_SAPPHIRE_KEYWORDS:
+            if keyword in p_lower:
+                return keyword.capitalize()
+        if gemstone and not any(s in gemstone.lower() for s in ["sapphire", "padparadscha"]):
+            return gemstone
+        return None
+
     async def generate_design_and_valuation(
         self,
         request: JewelryDesignRequest,
     ) -> JewelryDesignResponse:
         pipeline = request.pipeline_option or PipelineOptionEnum.HYBRID
-        prompt = request.prompt or f"A bespoke luxury {request.category} in {request.metal} with {request.setting_type} setting"
+        raw_prompt = request.prompt or f"A bespoke luxury {request.category} in {request.metal} with {request.setting_type} setting"
         aesthetic = request.aesthetic_style.value if hasattr(request.aesthetic_style, "value") else str(request.aesthetic_style or "Modern")
+
+        # Synthesize base prompt with studio conditioning instructions
+        conditioned_prompt = self.build_studio_conditioned_prompt(request)
 
         # 1. Execute Canvas Staging (Steps 1 & 2) if pipeline requires loose stone preservation
         staging_data = None
@@ -66,7 +126,8 @@ class GenerationPipelineCoordinator:
         if runpod_client.is_configured(endpoint_id):
             runpod_payload = {
                 "pipeline": pipeline.value,
-                "prompt": prompt,
+                "prompt": conditioned_prompt,
+                "raw_user_prompt": raw_prompt,
                 "aesthetic_style": aesthetic,
                 "category": request.category,
                 "metal": request.metal,
@@ -86,7 +147,6 @@ class GenerationPipelineCoordinator:
         # Local fallback if RunPod not yet configured / offline
         sample_index = 1
         if not rendered_image_b64:
-            # Pick sample render from backend/assets/designs
             if "vintage" in aesthetic.lower():
                 sample_index = 2
             elif "minimal" in aesthetic.lower():
@@ -106,7 +166,7 @@ class GenerationPipelineCoordinator:
         audit_raw = gemini_bridge.audit_features(
             image_path_or_base64=rendered_image_b64,
             user_specs={
-                "prompt": prompt,
+                "prompt": raw_prompt,
                 "setting_type": request.setting_type,
                 "number_of_accent_stones": request.number_of_accent_stones,
                 "metal": request.metal,
@@ -135,9 +195,12 @@ class GenerationPipelineCoordinator:
             team_member_gemstone=request.team_member_gemstone,
         )
 
+        # Check for non-sapphire calibration notice
+        non_sapphire = self.detect_non_sapphire(raw_prompt, request.gemstone or "")
+
         return JewelryDesignResponse(
             status="success",
-            prompt=prompt,
+            prompt=raw_prompt,
             aesthetic_style=aesthetic,
             pipeline_used=pipeline.value,
             image_base64=rendered_image_b64,
@@ -147,9 +210,16 @@ class GenerationPipelineCoordinator:
             valuation=val_result["valuation"],
             execution_source=execution_source,
             metadata={
+                "conditioned_diffusion_prompt": conditioned_prompt,
                 "prong_overlap_pixels": staging_data.overlap_margin if staging_data else 0,
                 "staged_gem_bbox": staging_data.gem_bounding_box if staging_data else None,
                 "reconciled_gemstone_inputs": val_result["reconciled_inputs"],
+                "non_sapphire_detected": non_sapphire,
+                "pricing_calibration_note": (
+                    f"Pricing engine calibrated on Ceylon Sapphires (Blue & Yellow) (R²=0.836). Quotation for {non_sapphire} is an approximate baseline."
+                    if non_sapphire
+                    else "Calibrated Ceylon Sapphire dynamic valuation"
+                ),
             },
         )
 

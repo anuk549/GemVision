@@ -87,3 +87,21 @@ def test_generate_design_with_hybrid_pipeline():
     assert data["bom_breakdown"]["gemstone_cost_lkr"] == 945000
     assert data["audited_attributes"]["setting_type"] is not None
     assert data["valuation"]["p50_fair_market_price_lkr"] > 0
+
+
+def test_enhance_prompt():
+    payload = {
+        "prompt": "Blue sapphire ring",
+        "category": "Ring",
+        "metal": "22KT Gold",
+        "gemstone": "Blue Sapphire",
+        "gemstone_weight_ct": 2.5,
+        "setting_type": "Prong",
+        "aesthetic_style": "Modern",
+    }
+    response = client.post("/api/v1/jewelry/enhance-prompt", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "enhanced_prompt" in data
+    assert "macro studio jewelry product photography" in data["enhanced_prompt"]
+

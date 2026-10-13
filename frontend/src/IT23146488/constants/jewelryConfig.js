@@ -15,11 +15,10 @@ export const METAL_ALLOYS = [
 ];
 
 export const GEMSTONE_TYPES = [
-  { label: 'Blue Sapphire', value: 'Blue Sapphire' },
-  { label: 'Yellow Sapphire', value: 'Yellow Sapphire' },
-  { label: 'Padparadscha', value: 'Padparadscha' },
-  { label: 'Ruby', value: 'Ruby' },
-  { label: 'Diamond', value: 'Diamond' },
+  { label: 'Blue Sapphire (Ceylon)', value: 'Blue Sapphire' },
+  { label: 'Yellow Sapphire (Pushparaga)', value: 'Yellow Sapphire' },
+  { label: 'Padparadscha (Sunset)', value: 'Padparadscha' },
+  { label: 'Other Gemstone', value: 'Other' },
 ];
 
 export const SETTING_STYLES = [
@@ -31,11 +30,10 @@ export const SETTING_STYLES = [
 ];
 
 export const COLOR_GRADES = [
-  { label: 'Royal Blue', value: 'Royal Blue' },
+  { label: 'Royal Blue (Top Grade)', value: 'Royal Blue' },
   { label: 'Cornflower Blue', value: 'Cornflower Blue' },
-  { label: 'Vivid Yellow', value: 'Vivid Yellow' },
-  { label: 'Warm Yellow', value: 'Yellow' },
-  { label: 'Pigeon Blood Red', value: 'Pigeon Blood' },
+  { label: 'Vivid Canary Yellow', value: 'Vivid Yellow' },
+  { label: 'Warm Golden Yellow', value: 'Golden Yellow' },
 ];
 
 export const STONE_GRADES = [
@@ -56,11 +54,35 @@ export const AESTHETIC_STYLES = [
   { label: 'Minimal', value: 'Minimal' },
 ];
 
-export const PROMPT_PRESETS = [
-  'A ring with multiple lines of this gem',
-  'Art deco Ceylon sapphire pendant with filigree',
-  'Solitaire engagement ring with pavé diamond accents',
-  'Minimalist band featuring bezel-set royal blue sapphire',
+export const DESIGN_STYLE_TAGS = [
+  { label: 'Solitaire Micro-Prong', promptAddon: 'four delicate micro-prongs holding the centerpiece cushion gem securely' },
+  { label: 'Pavé Diamond Halo', promptAddon: 'surrounded by an exquisite micro-pavé melee diamond halo' },
+  { label: 'Art Deco Filigree', promptAddon: 'vintage Art Deco milgrain filigree gallery and engraved shoulders' },
+  { label: 'Modern Tension Band', promptAddon: 'sleek architectural tension-style mounting with mirror-polished band' },
+  { label: 'Cathedral Arch', promptAddon: 'graceful cathedral arch shanks elevating the gemstone centerpiece' },
+];
+
+export const NON_SAPPHIRE_GEMS = [
+  'ruby',
+  'emerald',
+  'diamond',
+  'tanzanite',
+  'alexandrite',
+  'opal',
+  'garnet',
+  'amethyst',
+  'tourmaline',
+  'topaz',
+  'aquamarine',
+  'peridot',
+  'spinel',
+  'pearl',
+  'zircon',
+  'quartz',
+  'jade',
+  'tsavorite',
+  'kunzite',
+  'morganite',
 ];
 
 export const DEFAULT_DESIGN_SPEC = {
