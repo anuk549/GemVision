@@ -48,11 +48,60 @@ export const buildClientEnhancedPrompt = ({
   aestheticStyle = 'Modern',
   carats = '2.50',
 }) => {
-  const c = Number(carats) || 2.0;
-  const scale = c >= 3.0 ? 'commanding centerpiece' : c >= 1.5 ? 'prominent centerpiece' : 'delicate centerpiece';
-  const baseVision = prompt.trim() || `A bespoke luxury ${category.toLowerCase()}`;
-  const stoneName = `${colorGrade} ${gemstone}`;
-  return `${baseVision}, featuring a ${scale} ${stoneName} secured in a refined ${setting.toLowerCase()} setting crafted in polished ${metal}, ${aestheticStyle.toLowerCase()} aesthetic contours, crisp macro studio jewelry photography, sharp facet brilliance, specular highlights, neutral studio backdrop, 8k resolution`;
+  const c = Number(carats) || 2.5;
+  const scale = c >= 3.5 ? 'commanding centerpiece' : c >= 1.8 ? 'prominent centerpiece' : 'delicate centerpiece';
+  const cleanInput = (prompt || '').trim();
+
+  // If user prompt is empty, generate an evocative bespoke concept
+  if (!cleanInput) {
+    return `A bespoke luxury ${category.toLowerCase()} featuring a ${scale} ${carats}ct ${colorGrade} Ceylon ${gemstone} held securely in an exquisite ${setting.toLowerCase()} setting crafted in polished ${metal}, ${aestheticStyle.toLowerCase()} architectural contours, macro studio jewelry photography, crisp facet reflections, high refraction dispersion, specular highlights, dark neutral studio backdrop, 8k resolution`;
+  }
+
+  // Intelligently transform common natural language phrases
+  let coreVision = cleanInput;
+  if (/multiple lines|lines of|several lines|multi line|multi-line/i.test(coreVision)) {
+    coreVision = coreVision.replace(
+      /with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines/gi,
+      'featuring multiple intertwining fluid bands encrusted with micro-pavé melee lines'
+    );
+  } else if (/\bhalo\b/i.test(coreVision) && !/micro-pavé halo/i.test(coreVision)) {
+    coreVision = coreVision.replace(/\bhalo\b/gi, 'delicate micro-pavé brilliant-cut diamond halo');
+  }
+
+  // Capitalize first letter of core vision
+  coreVision = coreVision.charAt(0).toUpperCase() + coreVision.slice(1);
+
+  // Check if core elements are already described by user
+  const hasStone = coreVision.toLowerCase().includes('sapphire') || coreVision.toLowerCase().includes('gem');
+  const hasMetal = /gold|silver|platinum/i.test(coreVision);
+  const hasSetting = /prong|bezel|pave|channel|halo/i.test(coreVision);
+
+  const stoneClause = hasStone
+    ? `highlighting the ${scale} ${carats}ct ${colorGrade} Ceylon ${gemstone}`
+    : `featuring a ${scale} ${carats}ct ${colorGrade} Ceylon ${gemstone}`;
+
+  const settingClause = hasSetting ? '' : `secured in a refined ${setting.toLowerCase()} mount`;
+  const metalClause = hasMetal ? '' : `crafted in lustrous ${metal}`;
+
+  const studioTokens = [
+    `${aestheticStyle.toLowerCase()} aesthetic contours`,
+    'macro studio jewelry product photography',
+    'sharp facet reflections',
+    'high refraction dispersion',
+    'specular highlights',
+    'neutral studio lighting',
+    '8k resolution fine jewelry render',
+  ];
+
+  const clauses = [coreVision];
+  if (!coreVision.toLowerCase().includes(colorGrade.toLowerCase())) {
+    clauses.push(stoneClause);
+  }
+  if (settingClause) clauses.push(settingClause);
+  if (metalClause) clauses.push(metalClause);
+  clauses.push(...studioTokens);
+
+  return clauses.filter(Boolean).join(', ');
 };
 
 export const enhancePrompt = async (promptData) => {
