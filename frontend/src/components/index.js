@@ -16,5 +16,7 @@ export { default as UploadCard } from './UploadCard';
 export { default as KeyValue } from './KeyValue';
 export { default as Badge } from './Badge';
 export { default as DetectionResult } from './DetectionResult';
+export { default as IdentificationResultCard } from './identify/IdentificationResultCard';
+export { default as RecentIdentificationsList } from './identify/RecentIdentificationsList';
 export { default as LoadingBar, Spinner, LoadingOverlay, InlineStatus } from './LoadingBar';
 export { colors, gradients, fontSizes, fontWeights, textVariants, spacing, radius, shadow } from '../theme';
