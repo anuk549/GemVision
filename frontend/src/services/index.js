@@ -8,3 +8,7 @@ export {
   imageMimeType,
   toUploadPart,
 } from './detectService';
+export {
+  identifyGemstone,
+  getBackendGemHistory,
+} from './gemClassifierService';
