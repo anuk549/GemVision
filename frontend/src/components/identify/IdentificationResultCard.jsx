@@ -18,12 +18,12 @@ export default function IdentificationResultCard({ result, onProceedToPricing })
     <Card>
       <View style={styles.resultHeader}>
         <View style={styles.resultIcon}>
-          <Icon name="sparkles" size={18} color={colors.accent} />
+          <Icon name="diamond" size={18} color={colors.accent} />
         </View>
         <View style={styles.headerTitles}>
           <AppText variant="title">Identification result</AppText>
           <AppText variant="caption" color={colors.textDim}>
-            Native Keras model inference
+            Gemstone Classification
           </AppText>
         </View>
       </View>
