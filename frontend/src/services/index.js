@@ -13,3 +13,4 @@ export {
   getBackendGemHistory,
 } from './gemClassifierService';
 export { predictSapphirePrice } from './pricingService';
+export { getJewelryRecommendation } from './jewelryService';
