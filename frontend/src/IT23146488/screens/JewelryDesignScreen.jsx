@@ -61,6 +61,7 @@ export default function JewelryDesignScreen() {
   const [stoneGrade, setStoneGrade] = useState('AA (Fine Jewelry)');
   const [colorGrade, setColorGrade] = useState('Royal Blue');
   const [treatment, setTreatment] = useState('Heated');
+  const [referenceType, setReferenceType] = useState('gemstone'); // 'gemstone' | 'sketch'
   const [referenceImage, setReferenceImage] = useState(null);
 
   // Generation & valuation states
@@ -162,6 +163,7 @@ export default function JewelryDesignScreen() {
         prompt: activePrompt,
         aesthetic_style: aestheticStyle,
         sample_index: nextSample,
+        reference_type: referenceType,
       };
 
       try {
@@ -534,11 +536,66 @@ export default function JewelryDesignScreen() {
                   style={styles.pillInput}
                 />
 
+                <AppText variant="label" color={colors.accent} style={styles.subfieldLabel}>
+                  Visual Reference Mode (Preservation or Concept Sketch)
+                </AppText>
+                <View style={styles.referenceTypeToggleRow}>
+                  <Pressable
+                    onPress={() => setReferenceType('gemstone')}
+                    style={[
+                      styles.referenceTypeOption,
+                      referenceType === 'gemstone' && styles.referenceTypeOptionActive,
+                    ]}
+                  >
+                    <Icon
+                      name="diamond-outline"
+                      size={14}
+                      color={referenceType === 'gemstone' ? colors.emerald : colors.textMuted}
+                    />
+                    <AppText
+                      variant="caption"
+                      weight={referenceType === 'gemstone' ? '700' : '500'}
+                      color={referenceType === 'gemstone' ? colors.emerald : colors.textMuted}
+                    >
+                      Loose Gem Photo
+                    </AppText>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setReferenceType('sketch')}
+                    style={[
+                      styles.referenceTypeOption,
+                      referenceType === 'sketch' && styles.referenceTypeOptionActive,
+                    ]}
+                  >
+                    <Icon
+                      name="pencil-outline"
+                      size={14}
+                      color={referenceType === 'sketch' ? colors.accent : colors.textMuted}
+                    />
+                    <AppText
+                      variant="caption"
+                      weight={referenceType === 'sketch' ? '700' : '500'}
+                      color={referenceType === 'sketch' ? colors.accent : colors.textMuted}
+                    >
+                      Jewelry Sketch / CAD
+                    </AppText>
+                  </Pressable>
+                </View>
+
                 <UploadCard
                   value={referenceImage}
                   onChange={setReferenceImage}
-                  title="Upload Reference Loose Sapphire Photo"
-                  subtitle="Audited with Gemini Vision for setting style & melee count"
+                  title={
+                    referenceType === 'gemstone'
+                      ? 'Upload Loose Ceylon Sapphire Photo'
+                      : 'Upload Hand-drawn Jewelry Sketch / Wireframe'
+                  }
+                  subtitle={
+                    referenceType === 'gemstone'
+                      ? 'FLUX inpainting preserves 100% exact stone pixels while building metal prongs outward'
+                      : 'Guides FLUX ring shank contours, crossover lines, and structural prong placement'
+                  }
                   style={styles.uploadCard}
                 />
               </View>
@@ -904,8 +961,31 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxs,
     fontSize: 11,
   },
+  referenceTypeToggleRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xxs,
+    marginBottom: spacing.xs,
+  },
+  referenceTypeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.divider,
+  },
+  referenceTypeOptionActive: {
+    backgroundColor: 'rgba(37, 192, 138, 0.12)',
+    borderColor: colors.emerald,
+  },
   uploadCard: {
-    marginTop: spacing.md,
+    marginTop: spacing.xs,
   },
   tabStepperRow: {
     flexDirection: 'row',

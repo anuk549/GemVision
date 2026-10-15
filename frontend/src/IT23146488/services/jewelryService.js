@@ -140,6 +140,9 @@ export const generateDesignAndQuote = async (specs, imageAsset = null) => {
   if (specs.team_member_gemstone) {
     form.append('team_member_gemstone_json', JSON.stringify(specs.team_member_gemstone));
   }
+  if (specs.reference_type) {
+    form.append('reference_type', specs.reference_type);
+  }
 
   if (imageAsset) {
     const uri = typeof imageAsset === 'string' ? imageAsset : imageAsset?.uri;
