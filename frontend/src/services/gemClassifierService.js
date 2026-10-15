@@ -44,33 +44,53 @@ export async function identifyGemstone(asset) {
 
   if (Platform.OS !== 'web') {
     // Native (Android / iOS): Use FileSystem.uploadAsync to stream directly from disk/content provider.
-    // This bypasses React Native 0.86 / Expo 57 JS FormData and avoids "Unsupported FormDataPart implementation".
-    const mimeType = imageMimeType(fileUri);
-    const uploadResult = await FileSystem.uploadAsync(endpointUrl, fileUri, {
-      httpMethod: 'POST',
-      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-      fieldName: 'file',
-      mimeType,
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    // If the image is a remote URL (e.g. from history), download to cache first since uploadAsync requires a local file URI.
+    let uploadUri = fileUri;
+    let tempCacheFile = null;
 
-    let parsed;
+    if (fileUri.startsWith('http://') || fileUri.startsWith('https://')) {
+      const ext = imageFileName(fileUri).split('.').pop().toLowerCase() || 'jpg';
+      tempCacheFile = `${FileSystem.cacheDirectory}gem_reid_${Date.now()}.${ext}`;
+      const downloadResult = await FileSystem.downloadAsync(fileUri, tempCacheFile);
+      uploadUri = downloadResult.uri;
+    }
+
     try {
-      parsed = JSON.parse(uploadResult.body);
-    } catch {
-      parsed = null;
-    }
+      const mimeType = imageMimeType(uploadUri);
+      const uploadResult = await FileSystem.uploadAsync(endpointUrl, uploadUri, {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType,
+        headers: {
+          Accept: 'application/json',
+        },
+      });
 
-    if (uploadResult.status < 200 || uploadResult.status >= 300) {
-      const message =
-        (parsed && (parsed.detail || parsed.message || parsed.error)) ||
-        `Identification request failed with status ${uploadResult.status}`;
-      throw new ApiError(message, { status: uploadResult.status, data: parsed });
-    }
+      let parsed;
+      try {
+        parsed = JSON.parse(uploadResult.body);
+      } catch {
+        parsed = null;
+      }
 
-    data = parsed;
+      if (uploadResult.status < 200 || uploadResult.status >= 300) {
+        const message =
+          (parsed && (parsed.detail || parsed.message || parsed.error)) ||
+          `Identification request failed with status ${uploadResult.status}`;
+        throw new ApiError(message, { status: uploadResult.status, data: parsed });
+      }
+
+      data = parsed;
+    } finally {
+      if (tempCacheFile) {
+        try {
+          await FileSystem.deleteAsync(tempCacheFile, { idempotent: true });
+        } catch {
+          // ignore cache cleanup error
+        }
+      }
+    }
   } else {
     // Web: Use standard fetch with FormData & Blob
     const form = new FormData();
@@ -117,20 +137,28 @@ export async function getBackendGemHistory() {
     const data = await apiClient.get(`${API_PREFIX}/gemstones/history`);
     if (!Array.isArray(data)) return [];
 
-    return data.map((item) => ({
-      id: item.id,
-      folder: item.folder,
-      gem: item.gem,
-      rawClass: item.raw_class,
-      confidence: item.confidence,
-      formattedPrediction: item.formatted_prediction,
-      canProceedToPricing: Boolean(item.can_proceed_to_pricing),
-      probabilities: item.probabilities || [],
-      savedPath: item.saved_path,
-      backendImageUrl: item.image_url ? `${API_BASE_URL}${item.image_url}` : null,
-      localUri: item.image_url ? `${API_BASE_URL}${item.image_url}` : null,
-      createdAt: item.created_at || Date.now(),
-    }));
+    return data.map((item) => {
+      const imageUrl = item.image_url ? `${API_BASE_URL}${item.image_url}` : null;
+      return {
+        id: item.id,
+        folder: item.folder,
+        gem: item.gem,
+        rawClass: item.raw_class,
+        confidence: item.confidence,
+        formattedPrediction: item.formatted_prediction,
+        canProceedToPricing: Boolean(item.can_proceed_to_pricing),
+        probabilities: (item.probabilities || []).map((p) => ({
+          class: p.class || p.class_name,
+          label: p.label || p.class || p.class_name,
+          confidence: Number(p.confidence) || 0,
+        })),
+        savedPath: item.saved_path,
+        backendImageUrl: imageUrl,
+        localUri: imageUrl,
+        sourceUri: imageUrl,
+        createdAt: item.created_at || Date.now(),
+      };
+    });
   } catch {
     // Backend may be offline during initial startup; fall back gracefully
     return [];
