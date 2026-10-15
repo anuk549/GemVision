@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Button,
   IdentificationResultCard,
+  JewelryRecommendationView,
   LoadingBar,
   Popup,
   RecentIdentificationsList,
@@ -12,8 +13,9 @@ import {
 import { useGemIdentification } from '../../../hooks';
 
 export default function IdentifyScreen() {
-  const [currentView, setCurrentView] = useState('identify'); // 'identify' | 'pricing'
+  const [currentView, setCurrentView] = useState('identify'); // 'identify' | 'pricing' | 'recommendation'
   const [pricingGem, setPricingGem] = useState(null);
+  const [recommendationStone, setRecommendationStone] = useState(null);
   const [image, setImage] = useState(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -66,6 +68,24 @@ export default function IdentifyScreen() {
         <SapphirePricePredictionView
           identifiedGem={pricingGem}
           onBack={() => setCurrentView('identify')}
+          onProceedToRecommendation={(stone) => {
+            setRecommendationStone(stone);
+            setCurrentView('recommendation');
+          }}
+        />
+      </Screen>
+    );
+  }
+
+  if (currentView === 'recommendation') {
+    return (
+      <Screen
+        title="Jewelry Recommendation"
+        subtitle="Recommended jewelry setting based on gemstone characteristics."
+      >
+        <JewelryRecommendationView
+          stoneData={recommendationStone}
+          onBack={() => setCurrentView('pricing')}
         />
       </Screen>
     );
