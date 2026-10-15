@@ -26,8 +26,8 @@ class Settings(BaseSettings):
 
     # Black Forest Labs (BFL) FLUX API
     BFL_API_KEY: str = ""
-    BFL_BASE_URL: str = "https://api.bfl.ml/v1"
-    BFL_FLUX_MODEL: str = "flux-pro-1.1"
+    BFL_BASE_URL: str = "https://api.bfl.ai/v1"
+    BFL_FLUX_MODEL: str = "flux-2-klein"
     BFL_INPAINTING_MODEL: str = "flux-pro-1.0-fill"
     BFL_POLL_INTERVAL_SECONDS: float = 2.0
     BFL_TIMEOUT_SECONDS: int = 120

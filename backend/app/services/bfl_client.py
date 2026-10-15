@@ -10,10 +10,8 @@ logger = logging.getLogger(__name__)
 
 class BFLClient:
     """
-    Black Forest Labs (BFL) FLUX API Client.
-    Supports official FLUX endpoints (flux-pro-1.1, flux-dev, flux-pro-1.0-fill)
-    for high-fidelity text-to-jewelry synthesis and precision inpainting
-    with loose gemstone pixel preservation.
+    Black Forest Labs (BFL) FLUX API Client (api.bfl.ai / api.bfl.ml).
+    Supports official FLUX 2 Klein, FLUX.1 Pro, and Inpainting/Fill endpoints.
     """
 
     def __init__(self):
@@ -28,10 +26,20 @@ class BFLClient:
         """Returns True if the user has provided a valid BFL API key in .env."""
         return bool(self.api_key and self.api_key.strip())
 
-    async def _poll_task(self, task_id: str) -> Dict[str, Any]:
-        """Polls BFL get_result endpoint until job status is 'Ready' or terminal."""
-        status_url = f"{self.base_url}/get_result?id={task_id}"
-        headers = {"x-key": self.api_key}
+    @staticmethod
+    def _safe_json(resp: httpx.Response) -> Dict[str, Any]:
+        """Safely parses JSON responses, avoiding bare JSONDecodeError on HTML error pages."""
+        try:
+            return resp.json()
+        except ValueError:
+            raise RuntimeError(f"BFL Non-JSON response (HTTP {resp.status_code}): {resp.text[:250]}")
+
+    async def _poll_task(self, polling_url: str) -> Dict[str, Any]:
+        """Polls BFL polling_url endpoint until job status is 'Ready' or terminal."""
+        headers = {
+            "accept": "application/json",
+            "x-key": self.api_key,
+        }
         elapsed = 0.0
 
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -40,23 +48,23 @@ class BFLClient:
                 elapsed += self.poll_interval
 
                 try:
-                    resp = await client.get(status_url, headers=headers)
+                    resp = await client.get(polling_url, headers=headers)
                     if resp.status_code == 200:
-                        data = resp.json()
+                        data = self._safe_json(resp)
                         status = data.get("status")
 
                         if status == "Ready":
                             return data
-                        elif status in ["Error", "Task not found", "Request Moderated"]:
+                        elif status in ["Error", "Task not found", "Request Moderated", "Failed"]:
                             err_msg = data.get("error") or data.get("details") or status
                             raise RuntimeError(f"BFL job failed with status '{status}': {err_msg}")
                         # Status is "Pending" or "Processing" - continue polling
                     else:
-                        logger.warning(f"BFL polling response status: {resp.status_code} ({resp.text})")
+                        logger.warning(f"BFL polling response status: {resp.status_code} ({resp.text[:150]})")
                 except httpx.RequestError as ex:
                     logger.warning(f"BFL polling network warning: {ex}")
 
-        raise TimeoutError(f"BFL FLUX job {task_id} timed out after {self.timeout} seconds.")
+        raise TimeoutError(f"BFL FLUX job timed out after {self.timeout} seconds ({polling_url}).")
 
     async def _fetch_image_as_base64(self, image_url: str) -> str:
         """Downloads the rendered image from BFL CDN and converts to Base64."""
@@ -77,9 +85,11 @@ class BFLClient:
         if not self.is_configured():
             raise RuntimeError("BFL_API_KEY is not configured in .env.")
 
-        target_model = model or self.flux_model
-        endpoint_url = f"{self.base_url}/{target_model}"
+        models_to_try = [model] if model else [self.flux_model, "flux-pro-1.1", "flux-dev"]
+        last_error = None
+
         headers = {
+            "accept": "application/json",
             "x-key": self.api_key,
             "Content-Type": "application/json",
         }
@@ -94,29 +104,37 @@ class BFLClient:
         if seed is not None:
             payload["seed"] = seed
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(endpoint_url, headers=headers, json=payload)
-            if resp.status_code != 200:
-                raise RuntimeError(f"BFL API error ({resp.status_code}): {resp.text}")
-            init_data = resp.json()
-            task_id = init_data.get("id")
+        async with httpx.AsyncClient(timeout=35.0) as client:
+            for target_model in models_to_try:
+                endpoint_url = f"{self.base_url}/{target_model}"
+                try:
+                    resp = await client.post(endpoint_url, headers=headers, json=payload)
+                    if resp.status_code == 200:
+                        init_data = self._safe_json(resp)
+                        task_id = init_data.get("id")
+                        polling_url = init_data.get("polling_url") or f"{self.base_url}/get_result?id={task_id}"
 
-        if not task_id:
-            raise RuntimeError(f"BFL did not return a task ID. Response: {init_data}")
+                        logger.info(f"Dispatched BFL FLUX job {task_id} on model '{target_model}'. Polling {polling_url}...")
+                        result_data = await self._poll_task(polling_url)
+                        sample_url = result_data.get("result", {}).get("sample")
+                        if not sample_url:
+                            raise RuntimeError(f"BFL completed without sample URL: {result_data}")
 
-        logger.info(f"Dispatched BFL FLUX job {task_id} on model {target_model}. Polling...")
-        result_data = await self._poll_task(task_id)
-        sample_url = result_data.get("result", {}).get("sample")
-        if not sample_url:
-            raise RuntimeError(f"BFL completed without sample URL: {result_data}")
+                        image_b64 = await self._fetch_image_as_base64(sample_url)
+                        return {
+                            "task_id": task_id,
+                            "image_url": sample_url,
+                            "image_base64": image_b64,
+                            "model_used": target_model,
+                        }
+                    else:
+                        last_error = f"BFL API error on {target_model} (HTTP {resp.status_code}): {resp.text[:200]}"
+                        logger.warning(last_error)
+                except Exception as ex:
+                    last_error = str(ex)
+                    logger.warning(f"Error attempting BFL model {target_model}: {ex}")
 
-        image_b64 = await self._fetch_image_as_base64(sample_url)
-        return {
-            "task_id": task_id,
-            "image_url": sample_url,
-            "image_base64": image_b64,
-            "model_used": target_model,
-        }
+        raise RuntimeError(f"All BFL model attempts failed. Last error: {last_error}")
 
     async def inpaint_image(
         self,
@@ -139,6 +157,7 @@ class BFLClient:
         target_model = model or self.inpainting_model
         endpoint_url = f"{self.base_url}/{target_model}"
         headers = {
+            "accept": "application/json",
             "x-key": self.api_key,
             "Content-Type": "application/json",
         }
@@ -155,18 +174,16 @@ class BFLClient:
         if seed is not None:
             payload["seed"] = seed
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=35.0) as client:
             resp = await client.post(endpoint_url, headers=headers, json=payload)
             if resp.status_code != 200:
-                raise RuntimeError(f"BFL Inpainting error ({resp.status_code}): {resp.text}")
-            init_data = resp.json()
+                raise RuntimeError(f"BFL Inpainting error ({resp.status_code}): {resp.text[:250]}")
+            init_data = self._safe_json(resp)
             task_id = init_data.get("id")
+            polling_url = init_data.get("polling_url") or f"{self.base_url}/get_result?id={task_id}"
 
-        if not task_id:
-            raise RuntimeError(f"BFL did not return an inpainting task ID. Response: {init_data}")
-
-        logger.info(f"Dispatched BFL Inpainting job {task_id} on model {target_model}. Polling...")
-        result_data = await self._poll_task(task_id)
+        logger.info(f"Dispatched BFL Inpainting job {task_id} on model {target_model}. Polling {polling_url}...")
+        result_data = await self._poll_task(polling_url)
         sample_url = result_data.get("result", {}).get("sample")
         if not sample_url:
             raise RuntimeError(f"BFL inpainting completed without sample URL: {result_data}")
