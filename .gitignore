@@ -21,6 +21,9 @@ frontend/build/
 .npm/
 .pnpm-store/
 
+# Uploads / inputs
+backend/assets/gem_inputs/
+
 # Model artifacts (large binaries)
 *.h5
 *.keras
