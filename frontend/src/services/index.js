@@ -12,3 +12,4 @@ export {
   identifyGemstone,
   getBackendGemHistory,
 } from './gemClassifierService';
+export { predictSapphirePrice } from './pricingService';
