@@ -20,5 +20,6 @@ export { default as DetectionResult } from './DetectionResult';
 export { default as IdentificationResultCard } from './identify/IdentificationResultCard';
 export { default as RecentIdentificationsList } from './identify/RecentIdentificationsList';
 export { default as SapphirePricePredictionView } from './identify/SapphirePricePredictionView';
+export { default as JewelryRecommendationView } from './identify/JewelryRecommendationView';
 export { default as LoadingBar, Spinner, LoadingOverlay, InlineStatus } from './LoadingBar';
 export { colors, gradients, fontSizes, fontWeights, textVariants, spacing, radius, shadow } from '../theme';
