@@ -69,10 +69,16 @@ export default function useGemIdentification({ onSuccess, onError } = {}) {
     }
   }, []);
 
+  const selectHistoryItem = useCallback((item) => {
+    if (!item) return;
+    setResult(item);
+    setError(null);
+  }, []);
+
   const reset = useCallback(() => {
     setResult(null);
     setError(null);
   }, []);
 
-  return { loading, error, result, history, run, reset, setHistory };
+  return { loading, error, result, history, run, reset, selectHistoryItem, setResult, setHistory };
 }
