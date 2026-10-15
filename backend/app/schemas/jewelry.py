@@ -52,6 +52,7 @@ class JewelryDesignRequest(BaseModel):
     # Reference asset
     gemstone_asset_id: Optional[str] = Field(None, description="ID from assets/gemstones/catalog.json")
     image_base64: Optional[str] = Field(None, description="Uploaded reference or loose stone image")
+    reference_type: Optional[str] = Field("gemstone", description="Type of uploaded reference: 'gemstone' (real stone preservation) or 'sketch' (hand sketch/wireframe layout)")
 
 
 class PriceEstimateRequest(BaseModel):

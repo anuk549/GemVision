@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     RUNPOD_POLL_INTERVAL_SECONDS: float = 2.5
     RUNPOD_MOCK_FALLBACK: bool = True
 
+    # Black Forest Labs (BFL) FLUX API
+    BFL_API_KEY: str = ""
+    BFL_BASE_URL: str = "https://api.bfl.ml/v1"
+    BFL_FLUX_MODEL: str = "flux-pro-1.1"
+    BFL_INPAINTING_MODEL: str = "flux-pro-1.0-fill"
+    BFL_POLL_INTERVAL_SECONDS: float = 2.0
+    BFL_TIMEOUT_SECONDS: int = 120
+
     # Directories
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
     ASSETS_DIR: Path = BASE_DIR / "assets"

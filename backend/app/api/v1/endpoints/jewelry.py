@@ -90,6 +90,7 @@ async def generate_jewelry_design(request: Request):
             gemstone_asset_id=form.get("gemstone_asset_id"),
             team_member_gemstone=team_gem,
             image_base64=image_b64,
+            reference_type=form.get("reference_type") or "gemstone",
         )
 
     return await generation_pipeline.generate_design_and_valuation(req)

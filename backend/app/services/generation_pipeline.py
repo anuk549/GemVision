@@ -6,6 +6,7 @@ from ..schemas.pipeline import PipelineOptionEnum, CanvasStagingRequest
 from ..schemas.jewelry import JewelryDesignRequest, JewelryDesignResponse, AuditedAttributes
 from .canvas_stager import canvas_stager
 from .runpod_client import runpod_client
+from .bfl_client import bfl_client
 from .gemini_bridge import gemini_bridge
 from .valuation_engine import valuation_engine
 from ...reusable_components.image_utils import (
@@ -152,36 +153,71 @@ class GenerationPipelineCoordinator:
         except Exception as ex:
             logger.warning(f"Canvas staging notice: {ex}")
 
-        # 2. RunPod Serverless Dispatch or Local High-Res Mock Synthesis
+        # 2. Dispatch Priority:
+        # Priority 1: Official Black Forest Labs FLUX API (if BFL_API_KEY is configured in .env)
+        # Priority 2: RunPod Serverless Infrastructure (if configured)
+        # Priority 3: High-Res Local Design Sample (Offline fallback)
         rendered_image_b64: Optional[str] = None
         execution_source = "mock_local"
 
-        endpoint_id = (
-            settings.RUNPOD_INPAINTING_ENDPOINT_ID
-            if pipeline in [PipelineOptionEnum.OPTION_A_INPAINTING, PipelineOptionEnum.HYBRID]
-            else settings.RUNPOD_IPADAPTER_ENDPOINT_ID or settings.RUNPOD_FLUX_ENDPOINT_ID
-        )
-
-        if runpod_client.is_configured(endpoint_id):
-            runpod_payload = {
-                "pipeline": pipeline.value,
-                "prompt": conditioned_prompt,
-                "raw_user_prompt": raw_prompt,
-                "aesthetic_style": aesthetic,
-                "category": request.category,
-                "metal": request.metal,
-                "setting_type": request.setting_type,
-                "canvas_image_base64": staging_data.canvas_image_base64 if staging_data else None,
-                "mask_image_base64": staging_data.mask_image_base64 if staging_data else None,
-            }
+        if bfl_client.is_configured():
             try:
-                runpod_res = await runpod_client.execute_job(endpoint_id, runpod_payload)
-                if runpod_res.get("status") == "COMPLETED":
-                    output = runpod_res.get("output", {})
-                    rendered_image_b64 = output.get("image_base64")
-                    execution_source = "runpod"
+                # If Option A or Hybrid Inpainting with loose gemstone canvas staging:
+                if (
+                    pipeline in [PipelineOptionEnum.OPTION_A_INPAINTING, PipelineOptionEnum.HYBRID]
+                    and staging_data
+                    and request.reference_type != "sketch"
+                ):
+                    logger.info("Dispatching Inpainting to Black Forest Labs flux-pro-1.0-fill (preserving loose gem)...")
+                    bfl_res = await bfl_client.inpaint_image(
+                        image_base64=staging_data.canvas_image_base64,
+                        mask_base64=staging_data.mask_image_base64,
+                        prompt=conditioned_prompt,
+                    )
+                    rendered_image_b64 = bfl_res.get("image_base64")
+                    execution_source = "black_forest_labs"
+                else:
+                    # Text-to-Image / Option B / Jewelry Sketch guidance:
+                    logger.info("Dispatching Text-to-Image to Black Forest Labs FLUX...")
+                    sketch_cue = ""
+                    if request.reference_type == "sketch" and request.image_base64:
+                        sketch_cue = ", adhering precisely to the structural geometry, shank curves, and prong positions of the uploaded jewelry design sketch"
+                    bfl_res = await bfl_client.generate_image(
+                        prompt=conditioned_prompt + sketch_cue,
+                    )
+                    rendered_image_b64 = bfl_res.get("image_base64")
+                    execution_source = "black_forest_labs"
             except Exception as ex:
-                logger.error(f"RunPod dispatch encountered an issue: {ex}. Using local mock render.")
+                logger.error(f"Black Forest Labs FLUX dispatch encountered an issue: {ex}. Checking RunPod/local fallback.")
+
+        # Priority 2: RunPod Serverless Dispatch
+        if not rendered_image_b64:
+            endpoint_id = (
+                settings.RUNPOD_INPAINTING_ENDPOINT_ID
+                if pipeline in [PipelineOptionEnum.OPTION_A_INPAINTING, PipelineOptionEnum.HYBRID]
+                else settings.RUNPOD_IPADAPTER_ENDPOINT_ID or settings.RUNPOD_FLUX_ENDPOINT_ID
+            )
+
+            if runpod_client.is_configured(endpoint_id):
+                runpod_payload = {
+                    "pipeline": pipeline.value,
+                    "prompt": conditioned_prompt,
+                    "raw_user_prompt": raw_prompt,
+                    "aesthetic_style": aesthetic,
+                    "category": request.category,
+                    "metal": request.metal,
+                    "setting_type": request.setting_type,
+                    "canvas_image_base64": staging_data.canvas_image_base64 if staging_data else None,
+                    "mask_image_base64": staging_data.mask_image_base64 if staging_data else None,
+                }
+                try:
+                    runpod_res = await runpod_client.execute_job(endpoint_id, runpod_payload)
+                    if runpod_res.get("status") == "COMPLETED":
+                        output = runpod_res.get("output", {})
+                        rendered_image_b64 = output.get("image_base64")
+                        execution_source = "runpod"
+                except Exception as ex:
+                    logger.error(f"RunPod dispatch encountered an issue: {ex}. Using local mock render.")
 
         # Local fallback if RunPod not yet configured / offline
         sample_index = 1
