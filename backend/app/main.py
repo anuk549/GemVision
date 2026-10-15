@@ -19,6 +19,7 @@ from app.schemas.common import ErrorDetail, ErrorResponse
 from app.services.defect_detector import DefectDetector
 from app.services.gem_classifier import GemClassifier
 from app.services.model_registry import MODEL_SPECS, ModelRegistry
+from app.services.sapphire_pricer import SapphirePricer
 
 logger = logging.getLogger("gemvision")
 
@@ -39,8 +40,13 @@ def _lifespan(settings: Settings):
         app.state.registry = registry
         app.state.detector = DefectDetector(registry)
         app.state.gem_classifier = GemClassifier(settings)
+        app.state.sapphire_pricer = SapphirePricer(settings)
 
-        logger.info("Loaded %d/%d defect model(s) and Gemstone Classifier", registry.loaded_count, len(MODEL_SPECS))
+        logger.info(
+            "Loaded %d/%d defect model(s), Gemstone Classifier, and Sapphire Pricer",
+            registry.loaded_count,
+            len(MODEL_SPECS),
+        )
         yield
         logger.info("Shutting down %s", settings.app_name)
 
