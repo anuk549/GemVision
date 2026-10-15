@@ -1,0 +1,15 @@
+{
+  "champion_model": "Tuned LightGBM",
+  "saved_timestamp": "2026-10-15 23:18:28",
+  "real_test_wape_pct": 6.27,
+  "real_test_mdape_pct": 14.68,
+  "interval_coverage_pct": 61.53846153846154,
+  "feature_columns": [
+    "total_manufacturing_cost_lkr",
+    "gemstone_cost_lkr",
+    "metal_cost_lkr",
+    "gemstone_weight_ct",
+    "metal_weight_g",
+    "number_of_accent_stones"
+  ]
+}

@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     ASSETS_DIR: Path = BASE_DIR / "assets"
     GEMSTONES_DIR: Path = ASSETS_DIR / "gemstones"
     DESIGNS_DIR: Path = ASSETS_DIR / "designs"
-    ML_MODELS_DIR: Path = BASE_DIR.parent / "ml" / "jewelrydesigngeneration" / "artifacts" / "pricing_models"
+    ML_MODELS_DIR: Path = ASSETS_DIR / "models" / "pricing"
 
     # Precious Metal Rates (LKR per gram, spot + Sea Street benchmark)
     DEFAULT_METAL_RATES: dict = {
