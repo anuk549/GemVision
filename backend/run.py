@@ -3,10 +3,12 @@ import sys
 from pathlib import Path
 import uvicorn
 
-# Ensure backend root is on sys.path
+# Ensure backend root and repo root are on sys.path
 BASE_DIR = Path(__file__).resolve().parent
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
+REPO_ROOT = BASE_DIR.parent
+for p in [str(BASE_DIR), str(REPO_ROOT)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 from app.core.config import settings
 
@@ -19,4 +21,5 @@ if __name__ == "__main__":
         host=settings.HOST,
         port=settings.PORT,
         reload=True,
+        app_dir=str(BASE_DIR),
     )

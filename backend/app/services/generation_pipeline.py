@@ -9,11 +9,18 @@ from .runpod_client import runpod_client
 from .bfl_client import bfl_client
 from .gemini_bridge import gemini_bridge
 from .valuation_engine import valuation_engine
-from ...reusable_components.image_utils import (
-    load_gemstone_from_assets,
-    base64_to_pil,
-    pil_to_base64,
-)
+try:
+    from reusable_components.image_utils import (
+        load_gemstone_from_assets,
+        base64_to_pil,
+        pil_to_base64,
+    )
+except (ImportError, ValueError):
+    from backend.reusable_components.image_utils import (
+        load_gemstone_from_assets,
+        base64_to_pil,
+        pil_to_base64,
+    )
 
 logger = logging.getLogger(__name__)
 

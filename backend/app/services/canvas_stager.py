@@ -3,12 +3,20 @@ from typing import Optional, Tuple
 from PIL import Image
 from ..core.config import settings
 from ..schemas.pipeline import CanvasStagingRequest, CanvasStagingResponse
-from ...reusable_components.image_utils import (
-    load_gemstone_from_assets,
-    base64_to_pil,
-    pil_to_base64,
-    stage_gemstone_on_canvas,
-)
+try:
+    from reusable_components.image_utils import (
+        load_gemstone_from_assets,
+        base64_to_pil,
+        pil_to_base64,
+        stage_gemstone_on_canvas,
+    )
+except (ImportError, ValueError):
+    from backend.reusable_components.image_utils import (
+        load_gemstone_from_assets,
+        base64_to_pil,
+        pil_to_base64,
+        stage_gemstone_on_canvas,
+    )
 
 logger = logging.getLogger(__name__)
 

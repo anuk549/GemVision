@@ -5,7 +5,10 @@ from typing import Dict, Any, Optional
 from ..core.config import settings
 from ..schemas.gemstone import TeamMemberGemstoneInput
 from ..schemas.jewelry import PriceEstimateRequest, ItemizedBOM, QuantileValuation
-from ...reusable_components.bom_calculator import compute_jewelry_bom_and_valuation
+try:
+    from reusable_components.bom_calculator import compute_jewelry_bom_and_valuation
+except (ImportError, ValueError):
+    from backend.reusable_components.bom_calculator import compute_jewelry_bom_and_valuation
 
 logger = logging.getLogger(__name__)
 
