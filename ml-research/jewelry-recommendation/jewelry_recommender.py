@@ -162,7 +162,7 @@ def get_raw_suitabilities(stone: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
     raw: Dict[str, Dict[str, float]] = {}
     for category_key, category_name in (
         ("ring", "Ring"),
-        ("bangle", "Bangle"),
+        ("earring", "Earring"),
         ("necklace", "Necklace"),
     ):
         raw[category_key] = {
@@ -187,7 +187,7 @@ def get_raw_suitabilities(stone: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
 
 # Explanations 
 
-_CATEGORY_LABELS = {"ring": "Ring", "bangle": "Bangle", "necklace": "Necklace"}
+_CATEGORY_LABELS = {"ring": "Ring", "earring": "Earring", "necklace": "Necklace"}
 
 
 def _factor_reason(
@@ -300,7 +300,7 @@ def recommend_jewelry(stone: dict) -> dict:
     factor_breakdown: Dict[str, Dict[str, Dict[str, float]]] = {}
     reasons: Dict[str, List[str]] = {}
 
-    for category in ("ring", "bangle", "necklace"):
+    for category in ("ring", "earring", "necklace"):
         breakdown: Dict[str, Dict[str, float]] = {}
         total = Decimal("0")
         category_reasons: List[str] = []
@@ -333,7 +333,7 @@ def recommend_jewelry(stone: dict) -> dict:
     return {
         "scores": {
             "ring": scores["ring"],
-            "bangle": scores["bangle"],
+            "earring": scores["earring"],
             "necklace": scores["necklace"],
         },
         "recommended": _CATEGORY_LABELS[recommended],
@@ -360,11 +360,11 @@ def _select_recommended(
     Tie handling (documented behavior):
       1. Prefer the category with the higher weight suitability.
       2. If still tied, prefer the category with the higher shape suitability.
-      3. If still tied, use the deterministic order: Ring, Necklace, Bangle.
+      3. If still tied, use the deterministic order: Ring, Necklace, Earring.
     """
     order_index = {name: i for i, name in enumerate(rules.TIE_BREAK_ORDER)}
     return min(
-        ("ring", "bangle", "necklace"),
+        ("ring", "earring", "necklace"),
         key=lambda c: (
             -scores[c],
             -raw[c]["weight"],

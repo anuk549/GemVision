@@ -26,11 +26,11 @@ IMPORTANT RESEARCH NOTES
 # Supported jewellery categories
 
 
-CATEGORIES = ("Ring", "Bangle", "Necklace")
+CATEGORIES = ("Ring", "Earring", "Necklace")
 
 # Deterministic tie-break order (documented in README.md):
 # 1) higher weight suitability, 2) higher shape suitability, 3) this order.
-TIE_BREAK_ORDER = ("Ring", "Necklace", "Bangle")
+TIE_BREAK_ORDER = ("Ring", "Necklace", "Earring")
 
 
 # Factor weights (research-defined initial heuristics, total = 1.00)
@@ -80,36 +80,38 @@ INPUT_TYPE_ERROR = "stone must be a dictionary of gemstone attributes."
 #   0.50 <= w <= 1.00, 1.00 < w <= 2.00, 2.00 < w <= 3.00, ...
 # ---------------------------------------------------------------------------
 
+# Earring weight suitability favours small-to-medium stones (worn in a pair,
+# weight hanging from the ear) and declines for oversized stones.
 WEIGHT_BANDS = [
     {
         "label": "0.50-1.00 ct",
         "min_inclusive": 0.50,
         "max_inclusive": 1.00,
-        "scores": {"ring": 1.00, "bangle": 0.90, "necklace": 0.75},
+        "scores": {"ring": 1.00, "earring": 1.00, "necklace": 0.75},
     },
     {
         "label": ">1.00-2.00 ct",
         "min_inclusive": 1.00,
         "max_inclusive": 2.00,
-        "scores": {"ring": 1.00, "bangle": 0.90, "necklace": 0.85},
+        "scores": {"ring": 1.00, "earring": 0.95, "necklace": 0.85},
     },
     {
         "label": ">2.00-3.00 ct",
         "min_inclusive": 2.00,
         "max_inclusive": 3.00,
-        "scores": {"ring": 0.90, "bangle": 0.75, "necklace": 1.00},
+        "scores": {"ring": 0.90, "earring": 0.80, "necklace": 1.00},
     },
     {
         "label": ">3.00-4.00 ct",
         "min_inclusive": 3.00,
         "max_inclusive": 4.00,
-        "scores": {"ring": 0.70, "bangle": 0.55, "necklace": 1.00},
+        "scores": {"ring": 0.70, "earring": 0.60, "necklace": 1.00},
     },
     {
         "label": ">4.00-5.00 ct",
         "min_inclusive": 4.00,
         "max_inclusive": 5.00,
-        "scores": {"ring": 0.55, "bangle": 0.40, "necklace": 1.00},
+        "scores": {"ring": 0.55, "earring": 0.40, "necklace": 1.00},
     },
 ]
 
@@ -152,15 +154,17 @@ SHAPE_ALIASES = {
     "unknown": "fancy",
 }
 
+# Earring shape suitability: symmetrical/versatile shapes suit studs well,
+# and drop-style shapes (pear, marquise) also wear nicely as earrings.
 SHAPE_SCORES = {
-    "round": {"ring": 1.00, "bangle": 1.00, "necklace": 0.90},
-    "oval": {"ring": 1.00, "bangle": 0.90, "necklace": 1.00},
-    "cushion": {"ring": 1.00, "bangle": 0.90, "necklace": 0.95},
-    "emerald": {"ring": 0.85, "bangle": 0.75, "necklace": 1.00},
-    "pear": {"ring": 0.80, "bangle": 0.65, "necklace": 1.00},
-    "marquise": {"ring": 0.75, "bangle": 0.60, "necklace": 1.00},
-    "trillion": {"ring": 0.80, "bangle": 0.65, "necklace": 0.95},
-    "fancy": {"ring": 0.75, "bangle": 0.65, "necklace": 0.90},
+    "round": {"ring": 1.00, "earring": 1.00, "necklace": 0.90},
+    "oval": {"ring": 1.00, "earring": 1.00, "necklace": 1.00},
+    "cushion": {"ring": 1.00, "earring": 0.95, "necklace": 0.95},
+    "emerald": {"ring": 0.85, "earring": 0.95, "necklace": 1.00},
+    "pear": {"ring": 0.80, "earring": 0.90, "necklace": 1.00},
+    "marquise": {"ring": 0.75, "earring": 0.85, "necklace": 1.00},
+    "trillion": {"ring": 0.80, "earring": 0.85, "necklace": 0.95},
+    "fancy": {"ring": 0.75, "earring": 0.80, "necklace": 0.90},
 }
 
 # Fallback used when Shape is missing or cannot be recognized.
@@ -204,12 +208,14 @@ TREATMENT_ALIASES = {
     "unknown": "unknown",
 }
 
+# Earrings are less exposed to hard impact than rings, so treated stones keep
+# a comparatively higher suitability than they would in a ring.
 TREATMENT_SCORES = {
-    "unheated": {"ring": 1.00, "bangle": 1.00, "necklace": 1.00},
-    "heat_treated": {"ring": 1.00, "bangle": 1.00, "necklace": 1.00},
-    "lattice_diffused": {"ring": 0.85, "bangle": 0.80, "necklace": 0.95},
-    "fracture_filled": {"ring": 0.55, "bangle": 0.45, "necklace": 0.85},
-    "unknown": {"ring": 0.75, "bangle": 0.75, "necklace": 0.75},
+    "unheated": {"ring": 1.00, "earring": 1.00, "necklace": 1.00},
+    "heat_treated": {"ring": 1.00, "earring": 1.00, "necklace": 1.00},
+    "lattice_diffused": {"ring": 0.85, "earring": 0.90, "necklace": 0.95},
+    "fracture_filled": {"ring": 0.55, "earring": 0.70, "necklace": 0.85},
+    "unknown": {"ring": 0.75, "earring": 0.75, "necklace": 0.75},
 }
 
 # Conservative default used when Treatment is missing or unrecognized.
@@ -246,12 +252,12 @@ CLARITY_ALIASES = {
 }
 
 CLARITY_SCORES = {
-    "eye_clean": {"ring": 1.00, "bangle": 1.00, "necklace": 1.00},
-    "slightly_included": {"ring": 0.90, "bangle": 0.85, "necklace": 0.95},
-    "more_included": {"ring": 0.65, "bangle": 0.55, "necklace": 0.85},
+    "eye_clean": {"ring": 1.00, "earring": 1.00, "necklace": 1.00},
+    "slightly_included": {"ring": 0.90, "earring": 0.95, "necklace": 0.95},
+    "more_included": {"ring": 0.65, "earring": 0.75, "necklace": 0.85},
     # Documented conservative fallback: mirror the "more included" group
     # rather than assuming high clarity when the field is missing.
-    "unknown": {"ring": 0.65, "bangle": 0.55, "necklace": 0.85},
+    "unknown": {"ring": 0.65, "earring": 0.75, "necklace": 0.85},
 }
 
 # Conservative default used when Clarity is missing or unrecognized.
@@ -285,10 +291,10 @@ CUT_ALIASES = {
 }
 
 CUT_SCORES = {
-    "mixed_brilliant": {"ring": 1.00, "bangle": 0.95, "necklace": 1.00},
-    "emerald_step": {"ring": 0.90, "bangle": 0.85, "necklace": 1.00},
-    "trillion": {"ring": 0.90, "bangle": 0.85, "necklace": 0.95},
-    "other": {"ring": 0.85, "bangle": 0.85, "necklace": 0.90},
+    "mixed_brilliant": {"ring": 1.00, "earring": 1.00, "necklace": 1.00},
+    "emerald_step": {"ring": 0.90, "earring": 0.95, "necklace": 1.00},
+    "trillion": {"ring": 0.90, "earring": 0.95, "necklace": 0.95},
+    "other": {"ring": 0.85, "earring": 0.85, "necklace": 0.90},
 }
 
 # Conservative default used when Cut is missing or unrecognized.

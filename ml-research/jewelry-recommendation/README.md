@@ -5,7 +5,7 @@ This folder contains the rule-based jewelry recommendation component of the GemV
 The system recommends the most suitable jewelry type for a sapphire from:
 
 - Ring
-- Bangle
+- Earring
 - Necklace
 
 It also gives a suitability score for each option.
@@ -89,12 +89,15 @@ The following fields are accepted but are not currently used for jewelry scoring
 
 The current research scope is from 0.50 ct to 5.00 ct.
 
-| Weight | Ring | Bangle | Necklace |
+Earrings favour small to medium stones because the stone hangs from the ear,
+so suitability falls as the stone gets larger.
+
+| Weight | Ring | Earring | Necklace |
 |---|---:|---:|---:|
-| 0.50–1.00 ct | 1.00 | 0.90 | 0.75 |
-| >1.00–2.00 ct | 1.00 | 0.90 | 0.85 |
-| >2.00–3.00 ct | 0.90 | 0.75 | 1.00 |
-| >3.00–4.00 ct | 0.70 | 0.55 | 1.00 |
+| 0.50–1.00 ct | 1.00 | 1.00 | 0.75 |
+| >1.00–2.00 ct | 1.00 | 0.95 | 0.85 |
+| >2.00–3.00 ct | 0.90 | 0.80 | 1.00 |
+| >3.00–4.00 ct | 0.70 | 0.60 | 1.00 |
 | >4.00–5.00 ct | 0.55 | 0.40 | 1.00 |
 
 If the weight is below 0.50 ct or above 5.00 ct, the system returns a validation error.
@@ -103,16 +106,16 @@ If the weight is below 0.50 ct or above 5.00 ct, the system returns a validation
 
 ## Shape Rules
 
-| Shape | Ring | Bangle | Necklace |
+| Shape | Ring | Earring | Necklace |
 |---|---:|---:|---:|
 | Round | 1.00 | 1.00 | 0.90 |
-| Oval | 1.00 | 0.90 | 1.00 |
-| Cushion | 1.00 | 0.90 | 0.95 |
-| Emerald / Asscher | 0.85 | 0.75 | 1.00 |
-| Pear | 0.80 | 0.65 | 1.00 |
-| Marquise | 0.75 | 0.60 | 1.00 |
-| Trillion | 0.80 | 0.65 | 0.95 |
-| Other / Unknown | 0.75 | 0.65 | 0.90 |
+| Oval | 1.00 | 1.00 | 1.00 |
+| Cushion | 1.00 | 0.95 | 0.95 |
+| Emerald / Asscher | 0.85 | 0.95 | 1.00 |
+| Pear | 0.80 | 0.90 | 1.00 |
+| Marquise | 0.75 | 0.85 | 1.00 |
+| Trillion | 0.80 | 0.85 | 0.95 |
+| Other / Unknown | 0.75 | 0.80 | 0.90 |
 
 Pointed or cornered shapes may need more protective setting considerations because they can be more exposed to impact.
 
@@ -120,12 +123,12 @@ Pointed or cornered shapes may need more protective setting considerations becau
 
 ## Treatment Rules
 
-| Treatment | Ring | Bangle | Necklace |
+| Treatment | Ring | Earring | Necklace |
 |---|---:|---:|---:|
 | Unheated | 1.00 | 1.00 | 1.00 |
 | Heat Treated | 1.00 | 1.00 | 1.00 |
-| Lattice Diffused | 0.85 | 0.80 | 0.95 |
-| Fracture Filled | 0.55 | 0.45 | 0.85 |
+| Lattice Diffused | 0.85 | 0.90 | 0.95 |
+| Fracture Filled | 0.55 | 0.70 | 0.85 |
 | Unknown | 0.75 | 0.75 | 0.75 |
 
 Different names such as `Heated`, `Heat`, `No Treatment`, `No Enhancement`, and `Diffused` are normalized before scoring.
@@ -134,12 +137,12 @@ Different names such as `Heated`, `Heat`, `No Treatment`, `No Enhancement`, and 
 
 ## Clarity Rules
 
-| Clarity | Ring | Bangle | Necklace |
+| Clarity | Ring | Earring | Necklace |
 |---|---:|---:|---:|
 | Eye Clean / VVS / VS | 1.00 | 1.00 | 1.00 |
-| Slightly Included / SI | 0.90 | 0.85 | 0.95 |
-| Moderately / Heavily Included | 0.65 | 0.55 | 0.85 |
-| Unknown | 0.65 | 0.55 | 0.85 |
+| Slightly Included / SI | 0.90 | 0.95 | 0.95 |
+| Moderately / Heavily Included | 0.65 | 0.75 | 0.85 |
+| Unknown | 0.65 | 0.75 | 0.85 |
 
 The system does not assume that every inclusion makes a sapphire weak.
 
@@ -151,11 +154,11 @@ However, significant inclusions or fractures may require additional durability c
 
 Cut has the smallest influence in the current recommendation system.
 
-| Cut | Ring | Bangle | Necklace |
+| Cut | Ring | Earring | Necklace |
 |---|---:|---:|---:|
-| Mixed Brilliant / Oval / Cushion / Faceted Superior | 1.00 | 0.95 | 1.00 |
-| Emerald / Step Cut | 0.90 | 0.85 | 1.00 |
-| Trillion Cut | 0.90 | 0.85 | 0.95 |
+| Mixed Brilliant / Oval / Cushion / Faceted Superior | 1.00 | 1.00 | 1.00 |
+| Emerald / Step Cut | 0.90 | 0.95 | 1.00 |
+| Trillion Cut | 0.90 | 0.95 | 0.95 |
 | Other / Unknown | 0.85 | 0.85 | 0.90 |
 
 ---
@@ -189,7 +192,7 @@ If two categories receive the same score, the system checks:
 
 1. Higher weight suitability
 2. Higher shape suitability
-3. If still equal: Ring → Necklace → Bangle
+3. If still equal: Ring → Necklace → Earring
 
 This keeps the recommendation consistent.
 
@@ -225,7 +228,7 @@ Example output:
 ```python
 {
     "ring": 97.0,
-    "bangle": 89.5,
+    "earring": 94.0,
     "necklace": 100.0
 }
 ```
@@ -317,7 +320,7 @@ The test file checks:
 
 ## Research Note
 
-There is no universal international standard that states that a sapphire with a specific weight, shape, clarity or treatment must be used in a Ring, Bangle or Necklace.
+There is no universal international standard that states that a sapphire with a specific weight, shape, clarity or treatment must be used in a Ring, Earring or Necklace.
 
 The rules used in this component are research-defined heuristics based on gemological considerations such as durability, wearability, treatment effects and setting requirements.
 

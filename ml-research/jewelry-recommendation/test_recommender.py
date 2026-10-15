@@ -64,11 +64,11 @@ class TestScenarios(unittest.TestCase):
             self.assertLessEqual(score, 100.0, f"{category} score > 100")
 
         # Recommended is one of the three categories.
-        self.assertIn(result["recommended"], ("Ring", "Bangle", "Necklace"))
+        self.assertIn(result["recommended"], ("Ring", "Earring", "Necklace"))
 
         # Recommendation matches the highest score.
         highest = max(result["scores"], key=result["scores"].get)
-        expected = {"ring": "Ring", "bangle": "Bangle", "necklace": "Necklace"}[highest]
+        expected = {"ring": "Ring", "earring": "Earring", "necklace": "Necklace"}[highest]
         self.assertEqual(result["recommended"], expected)
 
         # Method and disclaimer present.
@@ -88,9 +88,11 @@ class TestScenarios(unittest.TestCase):
         """0.75 ct Round, Eye Clean, Heat Treated."""
         result = recommend_jewelry(make_stone(weight=0.75, shape="Round"))
         self.assert_valid_result(result)
-        # 0.50-1.00 band: weight ring=1.00 bangle=0.90 necklace=0.75
+        # 0.50-1.00 band: weight ring=1.00 earring=1.00 necklace=0.75
         self.assertAlmostEqual(result["scores"]["ring"], 100.0, delta=self.TOL)
-        self.assertAlmostEqual(result["scores"]["bangle"], 96.5, delta=self.TOL)
+        # Small round stones suit both Ring and Earring perfectly: a tie is
+        # resolved by tie-break step 3 (Ring before Earring).
+        self.assertAlmostEqual(result["scores"]["earring"], 100.0, delta=self.TOL)
         self.assertAlmostEqual(result["scores"]["necklace"], 90.0, delta=self.TOL)
         self.assertEqual(result["recommended"], "Ring")
 
@@ -100,8 +102,8 @@ class TestScenarios(unittest.TestCase):
         self.assert_valid_result(result)
         # ring: 0.90*30 + 1.00*25 + 1.00*20 + 1.00*15 + 1.00*10 = 97.0
         self.assertAlmostEqual(result["scores"]["ring"], 97.0, delta=self.TOL)
-        # bangle: 0.75*30 + 0.90*25 + 1.00*20 + 1.00*15 + 0.95*10 = 89.5
-        self.assertAlmostEqual(result["scores"]["bangle"], 89.5, delta=self.TOL)
+        # earring: 0.80*30(24) + 1.00*25 + 1.00*20 + 1.00*15 + 1.00*10 = 94.0
+        self.assertAlmostEqual(result["scores"]["earring"], 94.0, delta=self.TOL)
         # necklace: 1.00*30 + 1.00*25 + 1.00*20 + 1.00*15 + 1.00*10 = 100.0
         self.assertAlmostEqual(result["scores"]["necklace"], 100.0, delta=self.TOL)
         self.assertEqual(result["recommended"], "Necklace")
@@ -113,8 +115,8 @@ class TestScenarios(unittest.TestCase):
         self.assert_valid_result(result)
         # ring: 27 + 25 + 20 + 0.90*15(13.5) + 10 = 95.5
         self.assertAlmostEqual(result["scores"]["ring"], 95.5, delta=self.TOL)
-        # bangle: 22.5 + 22.5 + 20 + 0.85*15(12.75) + 9.5 = 87.25 -> 87.3 (HALF_UP)
-        self.assertEqual(result["scores"]["bangle"], 87.3)
+        # earring: 0.80*30(24) + 0.95*25(23.75) + 20 + 0.95*15(14.25) + 10 = 92.0
+        self.assertEqual(result["scores"]["earring"], 92.0)
         # necklace: 30 + 23.75 + 20 + 0.95*15(14.25) + 10 = 98.0
         self.assertAlmostEqual(result["scores"]["necklace"], 98.0, delta=self.TOL)
         self.assertEqual(result["recommended"], "Necklace")
@@ -126,8 +128,8 @@ class TestScenarios(unittest.TestCase):
         self.assert_valid_result(result)
         # ring: 0.55*30(16.5) + 25 + 0.75*20(15) + 0.65*15(9.75) + 10 = 76.25 -> 76.3 (HALF_UP)
         self.assertEqual(result["scores"]["ring"], 76.3)
-        # bangle: 12 + 22.5 + 15 + 8.25 + 9.5 = 67.25 -> 67.3 (HALF_UP)
-        self.assertEqual(result["scores"]["bangle"], 67.3)
+        # earring: 0.40*30(12) + 25 + 15 + 0.75*15(11.25) + 10 = 73.25 -> 73.3 (HALF_UP)
+        self.assertEqual(result["scores"]["earring"], 73.3)
         # necklace: 30 + 25 + 15 + 0.85*15(12.75) + 10 = 92.75 -> 92.8 (HALF_UP)
         self.assertEqual(result["scores"]["necklace"], 92.8)
         self.assertEqual(result["recommended"], "Necklace")
@@ -138,8 +140,8 @@ class TestScenarios(unittest.TestCase):
         self.assert_valid_result(result)
         # ring: 0.70*30(21) + 0.80*25(20) + 20 + 15 + 10 = 86.0
         self.assertAlmostEqual(result["scores"]["ring"], 86.0, delta=self.TOL)
-        # bangle: 16.5 + 16.25 + 20 + 15 + 9.5 = 77.25 -> 77.3 (HALF_UP)
-        self.assertEqual(result["scores"]["bangle"], 77.3)
+        # earring: 0.60*30(18) + 0.90*25(22.5) + 20 + 15 + 10 = 85.5
+        self.assertEqual(result["scores"]["earring"], 85.5)
         # necklace: 30 + 25 + 20 + 15 + 10 = 100.0
         self.assertAlmostEqual(result["scores"]["necklace"], 100.0, delta=self.TOL)
         self.assertEqual(result["recommended"], "Necklace")
@@ -154,8 +156,8 @@ class TestScenarios(unittest.TestCase):
         self.assert_valid_result(result)
         # ring: 30 + 0.75*25(18.75) + 20 + 15 + 10 = 93.75 -> 93.8 (HALF_UP)
         self.assertEqual(result["scores"]["ring"], 93.8)
-        # bangle: 27 + 0.60*25(15) + 20 + 15 + 9.5 = 86.5
-        self.assertAlmostEqual(result["scores"]["bangle"], 86.5, delta=self.TOL)
+        # earring: 0.95*30(28.5) + 0.85*25(21.25) + 20 + 15 + 10 = 94.75 -> 94.8 (HALF_UP)
+        self.assertEqual(result["scores"]["earring"], 94.8)
         # necklace: 25.5 + 25 + 20 + 15 + 10 = 95.5 (weight band >1.00-2.00 = 0.85)
         self.assertAlmostEqual(result["scores"]["necklace"], 95.5, delta=self.TOL)
 
@@ -166,8 +168,8 @@ class TestScenarios(unittest.TestCase):
         self.assert_valid_result(result)
         # ring: 30 + 25 + 20 + 0.65*15(9.75) + 10 = 94.75 -> 94.8 (HALF_UP)
         self.assertEqual(result["scores"]["ring"], 94.8)
-        # bangle: 27 + 25 + 20 + 0.55*15(8.25) + 9.5 = 89.75 -> 89.8 (HALF_UP)
-        self.assertEqual(result["scores"]["bangle"], 89.8)
+        # earring: 0.95*30(28.5) + 25 + 20 + 0.75*15(11.25) + 10 = 94.75 -> 94.8 (HALF_UP)
+        self.assertEqual(result["scores"]["earring"], 94.8)
         # necklace: 25.5 + 22.5 + 20 + 0.85*15(12.75) + 10 = 90.75 -> 90.8 (HALF_UP)
         self.assertEqual(result["scores"]["necklace"], 90.8)
         self.assertEqual(result["recommended"], "Ring")
@@ -182,8 +184,8 @@ class TestScenarios(unittest.TestCase):
         self.assert_valid_result(result)
         # ring: 30 + 25 + 0.85*20(17) + 15 + 10 = 97.0
         self.assertEqual(result["scores"]["ring"], 97.0)
-        # bangle: 27 + 25 + 0.80*20(16) + 15 + 9.5 = 92.5
-        self.assertEqual(result["scores"]["bangle"], 92.5)
+        # earring: 28.5 + 25 + 0.90*20(18) + 15 + 10 = 96.5
+        self.assertEqual(result["scores"]["earring"], 96.5)
         # necklace: 0.85*30(25.5) + 0.90*25(22.5) + 0.95*20(19) + 15 + 10 = 92.0
         self.assertAlmostEqual(result["scores"]["necklace"], 92.0, delta=self.TOL)
         self.assertEqual(result["recommended"], "Ring")
@@ -197,7 +199,10 @@ class TestScenarios(unittest.TestCase):
         self.assertEqual(result["scores"]["ring"], 95.3)
         # necklace: 0.85*30(25.5) + 25 + 20 + 15 + 10 = 95.5
         self.assertAlmostEqual(result["scores"]["necklace"], 95.5, delta=self.TOL)
-        self.assertEqual(result["recommended"], "Necklace")
+        # earring: 0.95*30(28.5) + 0.95*25(23.75) + 20 + 15 + 0.95*10(9.5) = 96.75 -> 96.8
+        self.assertEqual(result["scores"]["earring"], 96.8)
+        # A step-cut emerald stone in a medium weight band suits earrings best.
+        self.assertEqual(result["recommended"], "Earring")
 
     def test_scenario_10_unknown_treatment(self):
         """Unknown treatment must not crash and must explain the fallback."""
@@ -392,7 +397,7 @@ class TestValidation(unittest.TestCase):
 
     def test_missing_categorical_keys_do_not_crash(self):
         result = recommend_jewelry({"Weight": 2.0})
-        self.assertIn(result["recommended"], ("Ring", "Bangle", "Necklace"))
+        self.assertIn(result["recommended"], ("Ring", "Earring", "Necklace"))
 
 
 
@@ -442,7 +447,7 @@ class TestResultStructure(unittest.TestCase):
         self.assertNotEqual(round(total, 1), 100.0)
 
     def test_all_factor_breakdowns_present(self):
-        for category in ("ring", "bangle", "necklace"):
+        for category in ("ring", "earring", "necklace"):
             breakdown = self.result["factor_breakdown"][category]
             self.assertEqual(
                 set(breakdown.keys()),
@@ -458,7 +463,7 @@ class TestResultStructure(unittest.TestCase):
                 self.assertAlmostEqual(entry["contribution"], expected, places=2)
 
     def test_reasons_present_for_every_category(self):
-        for category in ("ring", "bangle", "necklace"):
+        for category in ("ring", "earring", "necklace"):
             self.assertEqual(len(self.result["reasons"][category]), 5)
 
     def test_recommendation_explanation_wording(self):
@@ -485,7 +490,7 @@ class TestResultStructure(unittest.TestCase):
 # Tie-handling tests
 
 class TestTieHandling(unittest.TestCase):
-    """Documented tie-break: weight, then shape, then Ring > Necklace > Bangle."""
+    """Documented tie-break: weight, then shape, then Ring > Necklace > Earring."""
 
     def test_identical_treatment_unknown_tie_prefers_weight_then_shape(self):
         # A stone where treatment and clarity and cut are all neutral/unknown
@@ -497,7 +502,7 @@ class TestTieHandling(unittest.TestCase):
             self.assertEqual(first, recommend_jewelry(stone))
 
     def test_tie_break_order_constant(self):
-        self.assertEqual(rules.TIE_BREAK_ORDER, ("Ring", "Necklace", "Bangle"))
+        self.assertEqual(rules.TIE_BREAK_ORDER, ("Ring", "Necklace", "Earring"))
 
 
 
@@ -534,6 +539,43 @@ class TestRounding(unittest.TestCase):
         for category, breakdown in result["factor_breakdown"].items():
             total = sum(f["contribution"] for f in breakdown.values())
             self.assertEqual(round_half_up(total, 1), result["scores"][category])
+
+
+# Earring-specific suitability tests
+
+
+class TestEarringSuitability(unittest.TestCase):
+    """Earrings favour small/medium stones; oversized stones suit them less."""
+
+    def test_earring_score_decreases_as_weight_grows(self):
+        # Otherwise identical stone; only weight changes.
+        scores = [
+            recommend_jewelry(make_stone(weight=w, shape="Round"))["scores"]["earring"]
+            for w in (0.75, 1.50, 2.50, 3.50, 4.50)
+        ]
+        for lighter, heavier in zip(scores, scores[1:]):
+            self.assertGreater(lighter, heavier,
+                               f"earring score did not decrease: {scores}")
+
+    def test_small_stone_suits_earring_at_least_as_well_as_necklace(self):
+        result = recommend_jewelry(make_stone(weight=0.75, shape="Round"))
+        self.assertGreaterEqual(result["scores"]["earring"],
+                                result["scores"]["necklace"])
+
+    def test_large_stone_earring_scores_below_necklace(self):
+        result = recommend_jewelry(make_stone(weight=4.50, shape="Oval",
+                                              treatment=None, clarity=None))
+        self.assertLess(result["scores"]["earring"], result["scores"]["necklace"])
+
+    def test_ring_and_necklace_weight_rules_unchanged_by_earring_focus(self):
+        # Ring/Necklace bands must keep their original research values.
+        expected_ring = [1.00, 1.00, 0.90, 0.70, 0.55]
+        expected_necklace = [0.75, 0.85, 1.00, 1.00, 1.00]
+        for band, ring_v, neck_v in zip(
+            rules.WEIGHT_BANDS, expected_ring, expected_necklace
+        ):
+            self.assertEqual(band["scores"]["ring"], ring_v)
+            self.assertEqual(band["scores"]["necklace"], neck_v)
 
 
 if __name__ == "__main__":
