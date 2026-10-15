@@ -73,21 +73,25 @@ export default function useForm({
     [initialValues]
   );
 
-  const handleSubmit = useCallback(async () => {
-    const nextErrors = validateAll();
-    if (hasErrors(nextErrors)) return { ok: false, errors: nextErrors };
-    if (!onSubmit) return { ok: true };
-    setSubmitting(true);
-    try {
-      const result = await onSubmit(values);
-      return { ok: true, result };
-    } catch (error) {
-      if (error && error.fieldErrors) setErrors(error.fieldErrors);
-      return { ok: false, error };
-    } finally {
-      setSubmitting(false);
-    }
-  }, [values, validateAll, onSubmit]);
+  const handleSubmit = useCallback(
+    async (overrideOnSubmit) => {
+      const nextErrors = validateAll();
+      if (hasErrors(nextErrors)) return { ok: false, errors: nextErrors };
+      const submitFn = typeof overrideOnSubmit === 'function' ? overrideOnSubmit : onSubmit;
+      if (!submitFn) return { ok: true };
+      setSubmitting(true);
+      try {
+        const result = await submitFn(values);
+        return { ok: true, result };
+      } catch (error) {
+        if (error && error.fieldErrors) setErrors(error.fieldErrors);
+        return { ok: false, error };
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [values, validateAll, onSubmit]
+  );
 
   const isValid = useMemo(
     () => !hasErrors(validateForm(values, validationSchema)),

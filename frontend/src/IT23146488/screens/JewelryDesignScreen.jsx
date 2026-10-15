@@ -178,7 +178,7 @@ export default function JewelryDesignScreen() {
     clearTimeout(stepTimer2);
     setGenerating(false);
 
-    if (!outcome.ok) {
+    if (!outcome?.ok || !outcome?.result) {
       setShowProgress(false);
       setPopup({
         visible: true,
