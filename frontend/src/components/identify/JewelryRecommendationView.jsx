@@ -185,7 +185,7 @@ export default function JewelryRecommendationView({
 
             {/* Type Name & Score */}
             <View style={styles.titleScoreRow}>
-              <AppText variant="hero" weight="700" color={colors.text} style={styles.recommendedTitle}>
+              <AppText variant="h2" weight="700" color={colors.text} style={styles.recommendedTitle}>
                 {recommendedType}
               </AppText>
               <View style={styles.scorePill}>
@@ -290,11 +290,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   resultsWrapper: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   recommendedCard: {
     alignItems: 'center',
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
     paddingHorizontal: spacing.md,
     borderColor: `${colors.accent}55`,
     borderWidth: 1.5,
@@ -322,11 +323,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     marginTop: spacing.md,
     paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
   recommendedTitle: {
     fontSize: 26,
+    lineHeight: 34,
+    paddingBottom: 4,
   },
   scorePill: {
     alignItems: 'flex-end',
@@ -337,6 +341,7 @@ const styles = StyleSheet.create({
   },
   otherSection: {
     gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   sectionLabel: {
     marginBottom: spacing.xs,
@@ -389,6 +394,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   explanationHeader: {
     flexDirection: 'row',
