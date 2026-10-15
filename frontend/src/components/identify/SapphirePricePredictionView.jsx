@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -82,7 +83,11 @@ const ORIGIN_OPTIONS = [
   'Other',
 ];
 
-export default function SapphirePricePredictionView({ identifiedGem, onBack }) {
+export default function SapphirePricePredictionView({
+  identifiedGem,
+  onBack,
+  onProceedToRecommendation,
+}) {
   const isYellow = identifiedGem?.rawClass === 'yellow_sapphire';
   const gemDisplayName = isYellow ? 'Yellow Sapphire' : 'Blue Sapphire';
   const gemThemeColor = isYellow ? colors.accent : colors.sapphire;
@@ -105,6 +110,7 @@ export default function SapphirePricePredictionView({ identifiedGem, onBack }) {
   const [errors, setErrors] = useState({});
   const [calculating, setCalculating] = useState(false);
   const [priceResult, setPriceResult] = useState(null);
+  const [showPriceModal, setShowPriceModal] = useState(false);
   const [popup, setPopup] = useState({ visible: false, type: 'info', title: '', message: '' });
 
   const validate = () => {
@@ -153,6 +159,7 @@ export default function SapphirePricePredictionView({ identifiedGem, onBack }) {
       });
 
       setPriceResult(outcome);
+      setShowPriceModal(true);
     } catch (err) {
       setPopup({
         visible: true,
@@ -163,6 +170,26 @@ export default function SapphirePricePredictionView({ identifiedGem, onBack }) {
     } finally {
       setCalculating(false);
     }
+  };
+
+  const handleProceedToRecommendation = () => {
+    setShowPriceModal(false);
+    onProceedToRecommendation?.(
+      {
+        weight: parseFloat(weight),
+        length: parseFloat(length),
+        width: parseFloat(width),
+        height: parseFloat(height),
+        color,
+        intensity,
+        clarity,
+        shape,
+        cut,
+        treatment,
+        origin,
+      },
+      priceResult
+    );
   };
 
   return (
@@ -353,48 +380,78 @@ export default function SapphirePricePredictionView({ identifiedGem, onBack }) {
         </View>
       </Card>
 
-      {/* 5. Result Display Card */}
-      {priceResult ? (
-        <Card style={styles.resultCard}>
-          <View style={styles.cardHeader}>
-            <View style={styles.resultIconWrap}>
-              <Icon name="cash" size={20} color={colors.success} />
-            </View>
-            <View style={styles.resultHeaderTitles}>
-              <AppText variant="title">Estimated Price Range</AppText>
-              <AppText variant="caption" color={colors.textDim}>
-                Market Price Valuation (USD)
-              </AppText>
-            </View>
-          </View>
+      {/* 5. Estimated Price Range Pop-up Card */}
+      <Modal
+        visible={showPriceModal && !!priceResult}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPriceModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowPriceModal(false)}
+        >
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Card style={styles.resultCard}>
+              <View style={styles.cardHeader}>
+                <View style={styles.resultIconWrap}>
+                  <Icon name="cash" size={20} color={colors.success} />
+                </View>
+                <View style={styles.resultHeaderTitles}>
+                  <AppText variant="title">Estimated Price Range</AppText>
+                  <AppText variant="caption" color={colors.textDim}>
+                    Market Price Valuation (USD)
+                  </AppText>
+                </View>
+                <Pressable
+                  onPress={() => setShowPriceModal(false)}
+                  hitSlop={8}
+                  style={styles.modalCloseBtn}
+                >
+                  <Icon name="close" size={22} color={colors.textMuted} />
+                </Pressable>
+              </View>
 
-          {/* Prominent Price Range Callout */}
-          <View style={styles.priceCallout}>
-            <AppText variant="caption" color={colors.textMuted} weight="700">
-              TOTAL ESTIMATED VALUE
-            </AppText>
-            <AppText variant="hero" color={colors.success} weight="700" style={styles.heroPrice}>
-              {priceResult.formattedTotalPriceRange}
-            </AppText>
-            <View style={styles.perCaratBadge}>
-              <AppText variant="subtitle" color={colors.accent} weight="700">
-                {priceResult.formattedPricePerCaratRange}
-              </AppText>
-            </View>
-          </View>
+              {/* Prominent Price Range Callout */}
+              <View style={styles.priceCallout}>
+                <AppText variant="caption" color={colors.textMuted} weight="700">
+                  TOTAL ESTIMATED VALUE
+                </AppText>
+                <AppText variant="hero" color={colors.success} weight="700" style={styles.heroPrice}>
+                  {priceResult?.formattedTotalPriceRange}
+                </AppText>
+                <View style={styles.perCaratBadge}>
+                  <AppText variant="subtitle" color={colors.accent} weight="700">
+                    {priceResult?.formattedPricePerCaratRange}
+                  </AppText>
+                </View>
+              </View>
 
-          {/* Summary KeyValue breakdown */}
-          <KeyValue
-            items={[
-              { label: 'Stone Weight', value: `${priceResult.weight} ct`, icon: 'scale-outline' },
-              { label: 'Median Valuation', value: `~$${priceResult.totalPriceMid.toLocaleString()} ($${priceResult.pricePerCaratMid.toLocaleString()}/ct)`, icon: 'stats-chart-outline', color: colors.primary },
-              { label: 'Color & Clarity', value: `${color} (${clarity})`, icon: 'diamond-outline' },
-              { label: 'Shape & Cut', value: `${shape} (${cut})`, icon: 'shapes-outline' },
-              { label: 'Origin & Treatment', value: `${origin} • ${treatment}`, icon: 'globe-outline' },
-            ]}
-          />
-        </Card>
-      ) : null}
+              {/* Summary KeyValue breakdown */}
+              {priceResult ? (
+                <KeyValue
+                  items={[
+                    { label: 'Stone Weight', value: `${priceResult.weight} ct`, icon: 'scale-outline' },
+                    { label: 'Median Valuation', value: `~$${priceResult.totalPriceMid.toLocaleString()} ($${priceResult.pricePerCaratMid.toLocaleString()}/ct)`, icon: 'stats-chart-outline', color: colors.primary },
+                    { label: 'Color & Clarity', value: `${color} (${clarity})`, icon: 'diamond-outline' },
+                    { label: 'Shape & Cut', value: `${shape} (${cut})`, icon: 'shapes-outline' },
+                    { label: 'Origin & Treatment', value: `${origin} • ${treatment}`, icon: 'globe-outline' },
+                  ]}
+                />
+              ) : null}
+            </Card>
+
+            {/* Below that card: Jewelry Recommendation button */}
+            <View style={styles.modalActions}>
+              <Button
+                title="Jewelry Recommendation"
+                icon="diamond-outline"
+                onPress={handleProceedToRecommendation}
+              />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Popup
         visible={popup.visible}
@@ -529,5 +586,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 4,
     borderRadius: radius.pill,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 440,
+    gap: spacing.md,
+  },
+  modalCloseBtn: {
+    padding: spacing.xs,
+  },
+  modalActions: {
+    width: '100%',
   },
 });
