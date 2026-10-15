@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, Request
 
@@ -23,6 +23,11 @@ def get_detector(request: Request) -> DefectDetector:
     return request.app.state.detector
 
 
+def get_sapphire_pricer(request: Request):
+    return request.app.state.sapphire_pricer
+
+
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 RegistryDep = Annotated[ModelRegistry, Depends(get_registry)]
 DetectorDep = Annotated[DefectDetector, Depends(get_detector)]
+SapphirePricerDep = Annotated[Any, Depends(get_sapphire_pricer)]
