@@ -83,6 +83,21 @@ const ORIGIN_OPTIONS = [
   'Other',
 ];
 
+function sanitizeTwoDecimals(text) {
+  if (text == null) return '';
+  let clean = String(text).replace(/,/g, '.');
+  clean = clean.replace(/[^0-9.]/g, '');
+  const parts = clean.split('.');
+  if (parts.length > 2) {
+    clean = `${parts[0]}.${parts.slice(1).join('')}`;
+  }
+  if (clean.includes('.')) {
+    const [whole, decimal] = clean.split('.');
+    return `${whole}.${decimal.slice(0, 2)}`;
+  }
+  return clean;
+}
+
 export default function SapphirePricePredictionView({
   identifiedGem,
   onBack,
@@ -96,9 +111,9 @@ export default function SapphirePricePredictionView({
   const colorOptions = isYellow ? YELLOW_SAPPHIRE_COLORS : BLUE_SAPPHIRE_COLORS;
 
   const [weight, setWeight] = useState('2.10');
-  const [length, setLength] = useState('8.4');
-  const [width, setWidth] = useState('6.9');
-  const [height, setHeight] = useState('4.6');
+  const [length, setLength] = useState('8.40');
+  const [width, setWidth] = useState('6.90');
+  const [height, setHeight] = useState('4.60');
   const [color, setColor] = useState(isYellow ? 'Yellow' : 'Blue');
   const [intensity, setIntensity] = useState('Vivid');
   const [clarity, setClarity] = useState('Eye Clean');
@@ -112,6 +127,26 @@ export default function SapphirePricePredictionView({
   const [priceResult, setPriceResult] = useState(null);
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [popup, setPopup] = useState({ visible: false, type: 'info', title: '', message: '' });
+
+  const handleWeightChange = (val) => {
+    setWeight(sanitizeTwoDecimals(val));
+    if (errors.weight) setErrors((prev) => ({ ...prev, weight: undefined }));
+  };
+
+  const handleLengthChange = (val) => {
+    setLength(sanitizeTwoDecimals(val));
+    if (errors.length) setErrors((prev) => ({ ...prev, length: undefined }));
+  };
+
+  const handleWidthChange = (val) => {
+    setWidth(sanitizeTwoDecimals(val));
+    if (errors.width) setErrors((prev) => ({ ...prev, width: undefined }));
+  };
+
+  const handleHeightChange = (val) => {
+    setHeight(sanitizeTwoDecimals(val));
+    if (errors.height) setErrors((prev) => ({ ...prev, height: undefined }));
+  };
 
   const validate = () => {
     const errs = {};
@@ -250,7 +285,7 @@ export default function SapphirePricePredictionView({
             required
             keyboardType="decimal-pad"
             value={weight}
-            onChangeText={setWeight}
+            onChangeText={handleWeightChange}
             error={errors.weight}
             placeholder="2.10"
             leftIcon="scale-outline"
@@ -261,9 +296,9 @@ export default function SapphirePricePredictionView({
             required
             keyboardType="decimal-pad"
             value={length}
-            onChangeText={setLength}
+            onChangeText={handleLengthChange}
             error={errors.length}
-            placeholder="8.4"
+            placeholder="8.40"
             leftIcon="resize-outline"
             style={styles.half}
           />
@@ -272,9 +307,9 @@ export default function SapphirePricePredictionView({
             required
             keyboardType="decimal-pad"
             value={width}
-            onChangeText={setWidth}
+            onChangeText={handleWidthChange}
             error={errors.width}
-            placeholder="6.9"
+            placeholder="6.90"
             leftIcon="resize-outline"
             style={styles.half}
           />
@@ -283,9 +318,9 @@ export default function SapphirePricePredictionView({
             required
             keyboardType="decimal-pad"
             value={height}
-            onChangeText={setHeight}
+            onChangeText={handleHeightChange}
             error={errors.height}
-            placeholder="4.6"
+            placeholder="4.60"
             leftIcon="resize-outline"
             style={styles.half}
           />
