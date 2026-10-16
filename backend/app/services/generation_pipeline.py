@@ -57,7 +57,7 @@ class GenerationPipelineCoordinator:
         aesthetic = request.aesthetic_style.value if hasattr(request.aesthetic_style, "value") else str(request.aesthetic_style or "Modern")
         carat = float(request.gemstone_weight_ct or 2.5)
 
-        # Decouple carats into qualitative scale tokens (prevents diffusion 2D scaling artifacts)
+        # Decouple carats into qualitative scale tokens (prevents diffusion 2D scaling artifacts and text on gems)
         if carat >= 3.5:
             scale_cue = "commanding centerpiece"
         elif carat >= 1.8:
@@ -67,16 +67,23 @@ class GenerationPipelineCoordinator:
 
         if not user_p:
             return (
-                f"A bespoke luxury {cat.lower()} featuring a {scale_cue} {carat:.2f}ct {request.color_grade or 'Royal Blue'} Ceylon {gem} "
+                f"A bespoke luxury {cat.lower()} featuring a {scale_cue} {request.color_grade or 'Royal Blue'} Ceylon {gem} "
                 f"held securely in an exquisite {setting.lower()} setting crafted in polished {metal}, "
                 f"{aesthetic.lower()} architectural contours, macro studio jewelry photography, "
-                f"sharp facet reflections, high refraction dispersion, specular highlights, dark neutral studio backdrop, 8k resolution"
+                f"sharp facet reflections, high refraction dispersion, specular highlights, dark neutral studio backdrop, 8k resolution, "
+                f"no text, no watermark, no typography, no labels, pristine fine jewelry render"
             )
 
-        if "macro" in user_p.lower() and "studio" in user_p.lower():
-            return user_p
+        # Normalize raw numbers and units to prevent diffusion model from rendering typography on gemstone
+        clean_user_p = re.sub(r"\b\d+(\.\d+)?\s*(ct|carats?|carat)\b", scale_cue, user_p, flags=re.IGNORECASE)
+        clean_user_p = re.sub(r"\b\d+(\.\d+)?\s*(g|grams?|gram)\b", "fine precious metal", clean_user_p, flags=re.IGNORECASE)
 
-        core_vision = user_p
+        if "macro" in clean_user_p.lower() and "studio" in clean_user_p.lower():
+            if "no text" not in clean_user_p.lower():
+                clean_user_p += ", no text, no watermark, no typography, no labels, pristine fine jewelry render"
+            return clean_user_p
+
+        core_vision = clean_user_p
         if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
             core_vision = re.sub(
                 r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
@@ -95,9 +102,9 @@ class GenerationPipelineCoordinator:
 
         color_str = f"{request.color_grade} " if request.color_grade else ""
         stone_clause = (
-            f"highlighting the {scale_cue} {carat:.2f}ct {color_str}Ceylon {gem}"
+            f"highlighting the {scale_cue} {color_str}Ceylon {gem}"
             if has_gem else
-            f"featuring a {scale_cue} {carat:.2f}ct {color_str}Ceylon {gem}"
+            f"featuring a {scale_cue} {color_str}Ceylon {gem}"
         )
         setting_clause = "" if has_setting else f"secured in a refined {setting.lower()} mount"
         metal_clause = "" if has_metal else f"crafted in lustrous {metal}"
@@ -107,9 +114,10 @@ class GenerationPipelineCoordinator:
             "macro studio jewelry product photography",
             "sharp facet reflections",
             "high refraction dispersion",
-            "specular highlights",
-            "neutral studio lighting",
-            "8k resolution fine jewelry render"
+            "specular caustic highlights",
+            "neutral luxury studio lighting",
+            "8k resolution fine jewelry render",
+            "no text, no watermark, no typography, no labels, pristine clean jewelry"
         ]
 
         clauses = [core_vision]
@@ -142,58 +150,43 @@ class GenerationPipelineCoordinator:
 
         # Synthesize base prompt with studio conditioning instructions
         conditioned_prompt = self.build_studio_conditioned_prompt(request)
-
-        # 1. Execute Canvas Staging (Steps 1 & 2) if pipeline requires loose stone preservation
         staging_data = None
-        gemstone_asset_id = request.gemstone_asset_id
-        if request.team_member_gemstone and request.team_member_gemstone.gemstone_asset_id:
-            gemstone_asset_id = request.team_member_gemstone.gemstone_asset_id
 
-        try:
-            staging_req = CanvasStagingRequest(
-                gemstone_asset_id=gemstone_asset_id,
-                gemstone_image_base64=request.image_base64,
-                target_canvas_size=1024,
-                prong_overlap_pixels=14 if pipeline == PipelineOptionEnum.HYBRID else 0,
-            )
-            staging_data = canvas_stager.stage_gemstone(staging_req)
-        except Exception as ex:
-            logger.warning(f"Canvas staging notice: {ex}")
+        # 1. Multi-image conditioning references (uploaded gem photo and/or sketch)
+        gem_b64 = request.image_base64 if request.reference_type != "sketch" else None
+        sketch_b64 = request.sketch_base64 or (request.image_base64 if request.reference_type == "sketch" else None)
+
+        input_img_1 = gem_b64 or sketch_b64
+        input_img_2 = sketch_b64 if (gem_b64 and sketch_b64) else None
+
+        sketch_cue = ""
+        if sketch_b64:
+            sketch_cue = ", adhering precisely to the structural geometry, shank curves, and prong positions of the uploaded jewelry design sketch"
+        gem_cue = ""
+        if gem_b64:
+            gem_cue = ", seamlessly setting and showcasing the uploaded loose gemstone with its natural crystal clarity, facet reflections, and vivid color saturation"
+
+        full_prompt = conditioned_prompt + gem_cue + sketch_cue
 
         # 2. Dispatch Priority:
-        # Priority 1: Official Black Forest Labs FLUX API (if BFL_API_KEY is configured in .env)
+        # Priority 1: Official Black Forest Labs FLUX.2 Klein 9B API (if BFL_API_KEY is configured in .env)
         # Priority 2: RunPod Serverless Infrastructure (if configured)
         # Priority 3: High-Res Local Design Sample (Offline fallback)
         rendered_image_b64: Optional[str] = None
+        rendered_image_url: Optional[str] = None
         execution_source = "mock_local"
 
         if bfl_client.is_configured():
             try:
-                # If Option A or Hybrid Inpainting with loose gemstone canvas staging:
-                if (
-                    pipeline in [PipelineOptionEnum.OPTION_A_INPAINTING, PipelineOptionEnum.HYBRID]
-                    and staging_data
-                    and request.reference_type != "sketch"
-                ):
-                    logger.info("Dispatching Inpainting to Black Forest Labs flux-pro-1.0-fill (preserving loose gem)...")
-                    bfl_res = await bfl_client.inpaint_image(
-                        image_base64=staging_data.canvas_image_base64,
-                        mask_base64=staging_data.mask_image_base64,
-                        prompt=conditioned_prompt,
-                    )
-                    rendered_image_b64 = bfl_res.get("image_base64")
-                    execution_source = "black_forest_labs"
-                else:
-                    # Text-to-Image / Option B / Jewelry Sketch guidance:
-                    logger.info("Dispatching Text-to-Image to Black Forest Labs FLUX...")
-                    sketch_cue = ""
-                    if request.reference_type == "sketch" and request.image_base64:
-                        sketch_cue = ", adhering precisely to the structural geometry, shank curves, and prong positions of the uploaded jewelry design sketch"
-                    bfl_res = await bfl_client.generate_image(
-                        prompt=conditioned_prompt + sketch_cue,
-                    )
-                    rendered_image_b64 = bfl_res.get("image_base64")
-                    execution_source = "black_forest_labs"
+                logger.info("Dispatching synthesis to Black Forest Labs FLUX 2 Klein 9B...")
+                bfl_res = await bfl_client.generate_image(
+                    prompt=full_prompt,
+                    input_image=input_img_1,
+                    input_image_2=input_img_2,
+                )
+                rendered_image_b64 = bfl_res.get("image_base64")
+                rendered_image_url = bfl_res.get("image_url")
+                execution_source = "black_forest_labs"
             except Exception as ex:
                 logger.error(f"Black Forest Labs FLUX dispatch encountered an issue: {ex}. Checking RunPod/local fallback.")
 
@@ -285,6 +278,7 @@ class GenerationPipelineCoordinator:
             prompt=raw_prompt,
             aesthetic_style=aesthetic,
             pipeline_used=pipeline.value,
+            image_url=rendered_image_url,
             image_base64=rendered_image_b64,
             design_sample=sample_index,
             audited_attributes=audited_attributes,

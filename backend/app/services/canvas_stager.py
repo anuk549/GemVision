@@ -30,23 +30,19 @@ class CanvasStagingService:
     def stage_gemstone(self, request: CanvasStagingRequest) -> CanvasStagingResponse:
         gem_image: Optional[Image.Image] = None
 
-        # 1. Try loading from assets catalog
-        if request.gemstone_asset_id:
-            gem_image = load_gemstone_from_assets(request.gemstone_asset_id, settings.GEMSTONES_DIR)
-
-        # 2. Try loading from base64 input
-        if not gem_image and request.gemstone_image_base64:
+        # 1. Try loading from base64 input
+        if request.gemstone_image_base64:
             try:
                 gem_image = base64_to_pil(request.gemstone_image_base64)
             except Exception as ex:
                 logger.error(f"Failed to decode base64 gemstone image: {ex}")
 
-        # 3. Fallback to default catalog stone
-        if not gem_image:
-            gem_image = load_gemstone_from_assets("blue_sapphire_cushion_2.5ct.png", settings.GEMSTONES_DIR)
+        # 2. Try loading from assets catalog only if explicitly provided
+        if not gem_image and request.gemstone_asset_id:
+            gem_image = load_gemstone_from_assets(request.gemstone_asset_id, settings.GEMSTONES_DIR)
 
         if not gem_image:
-            raise ValueError("No valid loose gemstone image found or provided.")
+            return None
 
         canvas, inpainting_mask, bbox = stage_gemstone_on_canvas(
             gem_image=gem_image,

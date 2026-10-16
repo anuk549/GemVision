@@ -7,6 +7,8 @@ from ....schemas.jewelry import (
     JewelryDesignRequest,
     JewelryDesignResponse,
     PriceEstimateRequest,
+    EnhancePromptRequest,
+    EnhancePromptResponse,
 )
 from ....schemas.pipeline import (
     PipelineOptionEnum,
@@ -18,6 +20,7 @@ from ....schemas.gemstone import TeamMemberGemstoneInput
 from ....services.generation_pipeline import generation_pipeline
 from ....services.canvas_stager import canvas_stager
 from ....services.valuation_engine import valuation_engine
+from ....services.gemini_service import gemini_enhancer
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -57,6 +60,13 @@ async def generate_jewelry_design(request: Request):
             contents = await image_file.read()
             image_b64 = base64.b64encode(contents).decode("utf-8")
 
+        sketch_b64 = form.get("sketch_base64")
+        sketch_file = form.get("sketch")
+        if sketch_file and hasattr(sketch_file, "read"):
+            import base64
+            sketch_contents = await sketch_file.read()
+            sketch_b64 = base64.b64encode(sketch_contents).decode("utf-8")
+
         pipeline_raw = form.get("pipeline_option")
         pipeline_enum = PipelineOptionEnum.HYBRID
         if pipeline_raw:
@@ -90,6 +100,7 @@ async def generate_jewelry_design(request: Request):
             gemstone_asset_id=form.get("gemstone_asset_id"),
             team_member_gemstone=team_gem,
             image_base64=image_b64,
+            sketch_base64=sketch_b64,
             reference_type=form.get("reference_type") or "gemstone",
         )
 
@@ -162,16 +173,19 @@ async def get_pipeline_options():
     }
 
 
-@router.post("/enhance-prompt")
-async def enhance_design_prompt(request: JewelryDesignRequest):
+@router.post("/enhance-prompt", response_model=EnhancePromptResponse)
+async def enhance_design_prompt(request: EnhancePromptRequest):
     """
-    Enriches a user's vision into a studio diffusion prompt
-    incorporating decoupled visual scale, specular facets, and professional studio lighting.
+    Enriches a user's vision into a luxury fine jewelry diffusion prompt
+    using Google Gemini guided by the Master High-Jeweler directive,
+    with automatic gemological fallback if API key is not configured.
     """
-    enhanced = generation_pipeline.build_studio_conditioned_prompt(request)
-    return {
-        "original_prompt": request.prompt,
-        "enhanced_prompt": enhanced,
-        "studio_instructions_applied": True,
-    }
+    return await gemini_enhancer.enhance_prompt(
+        prompt=request.prompt,
+        gemstone=request.gemstone or "Blue Sapphire",
+        gemstone_weight_ct=request.gemstone_weight_ct or 2.5,
+        metal=request.metal or "22KT Gold",
+        metal_weight_g=request.metal_weight_g or 5.0,
+        aesthetic_style=request.aesthetic_style or "Modern",
+    )
 

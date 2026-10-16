@@ -103,5 +103,7 @@ def test_enhance_prompt():
     assert response.status_code == 200
     data = response.json()
     assert "enhanced_prompt" in data
-    assert "macro studio jewelry product photography" in data["enhanced_prompt"]
+    assert len(data["enhanced_prompt"]) > 30
+    assert "sapphire" in data["enhanced_prompt"].lower()
+    assert "gemini_applied" in data
 

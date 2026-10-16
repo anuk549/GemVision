@@ -52,6 +52,7 @@ class JewelryDesignRequest(BaseModel):
     # Reference asset
     gemstone_asset_id: Optional[str] = Field(None, description="ID from assets/gemstones/catalog.json")
     image_base64: Optional[str] = Field(None, description="Uploaded reference or loose stone image")
+    sketch_base64: Optional[str] = Field(None, description="Uploaded concept sketch image")
     reference_type: Optional[str] = Field("gemstone", description="Type of uploaded reference: 'gemstone' (real stone preservation) or 'sketch' (hand sketch/wireframe layout)")
 
 
@@ -85,3 +86,20 @@ class JewelryDesignResponse(BaseModel):
     valuation: QuantileValuation
     execution_source: str = Field("mock_local", description="'runpod' or 'mock_local'")
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class EnhancePromptRequest(BaseModel):
+    prompt: str = Field(..., description="User original prompt or concept")
+    gemstone: Optional[str] = Field("Blue Sapphire", description="Center gemstone type")
+    gemstone_weight_ct: Optional[float] = Field(2.5, description="Gemstone carat weight")
+    metal: Optional[str] = Field("22KT Gold", description="Precious metal alloy")
+    metal_weight_g: Optional[float] = Field(5.0, description="Metal weight in grams")
+    aesthetic_style: Optional[str] = Field("Modern", description="Aesthetic style (e.g. Modern, Vintage, Minimal, Royal Halo)")
+
+
+class EnhancePromptResponse(BaseModel):
+    original_prompt: str
+    enhanced_prompt: str
+    gemini_applied: bool = False
+    model_used: Optional[str] = None
+

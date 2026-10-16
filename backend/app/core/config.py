@@ -27,10 +27,23 @@ class Settings(BaseSettings):
     # Black Forest Labs (BFL) FLUX API
     BFL_API_KEY: str = ""
     BFL_BASE_URL: str = "https://api.bfl.ai/v1"
-    BFL_FLUX_MODEL: str = "flux-2-klein"
+    BFL_FLUX_MODEL: str = "flux-2-klein-9b"
     BFL_INPAINTING_MODEL: str = "flux-pro-1.0-fill"
     BFL_POLL_INTERVAL_SECONDS: float = 2.0
     BFL_TIMEOUT_SECONDS: int = 120
+
+    # Google Gemini API for Intelligent Prompt Enhancement
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GEMINI_MASTER_PROMPT: str = (
+        "You are an elite Master High-Jewelry Designer, Gemologist, and AI Diffusion Art Director specializing in bespoke luxury creations. "
+        "Transform the user's raw jewelry concept into a magnificent, production-grade text-to-image diffusion prompt. "
+        "Highlight the center gemstone's crystal clarity, vivid saturation, facet cut geometry, and internal scintillation reflecting its carat weight. "
+        "Detail the precious metal alloy, mirror-polished finish, secure goldsmith prong architecture, gallery under-rail, and balanced structural contours. "
+        "Faithfully preserve and elevate the user's core idea with authentic fine jewelry craftsmanship terminology. "
+        "Include macro studio photography directives: razor-sharp facet reflections, specular caustic highlights, soft diffused shadows, clean neutral studio backdrop, 8k resolution. "
+        "Output ONLY the single cohesive enhanced prompt paragraph (50-80 words) with no conversational preamble, quotes, or markdown."
+    )
 
     # Directories
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent

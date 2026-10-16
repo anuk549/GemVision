@@ -24,7 +24,14 @@ class BFLClient:
 
     def is_configured(self) -> bool:
         """Returns True if the user has provided a valid BFL API key in .env."""
-        return bool(self.api_key and self.api_key.strip())
+        import os
+        key = os.getenv("BFL_API_KEY") or settings.BFL_API_KEY or self.api_key
+        return bool(key and key.strip())
+
+    @property
+    def current_api_key(self) -> str:
+        import os
+        return (os.getenv("BFL_API_KEY") or settings.BFL_API_KEY or self.api_key or "").strip()
 
     @staticmethod
     def _safe_json(resp: httpx.Response) -> Dict[str, Any]:
@@ -38,7 +45,7 @@ class BFLClient:
         """Polls BFL polling_url endpoint until job status is 'Ready' or terminal."""
         headers = {
             "accept": "application/json",
-            "x-key": self.api_key,
+            "x-key": self.current_api_key,
         }
         elapsed = 0.0
 
@@ -76,31 +83,40 @@ class BFLClient:
     async def generate_image(
         self,
         prompt: str,
+        input_image: Optional[str] = None,
+        input_image_2: Optional[str] = None,
         width: int = 1024,
         height: int = 1024,
         model: Optional[str] = None,
         seed: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Dispatches Text-to-Image synthesis to BFL FLUX."""
+        """Dispatches Text-to-Image / Multi-image conditioned synthesis to BFL FLUX 2 Klein."""
         if not self.is_configured():
             raise RuntimeError("BFL_API_KEY is not configured in .env.")
 
-        models_to_try = [model] if model else [self.flux_model, "flux-pro-1.1", "flux-dev"]
+        import os
+        configured_model = (os.getenv("BFL_FLUX_MODEL") or settings.BFL_FLUX_MODEL or "flux-2-klein-9b").strip()
+        models_to_try = [configured_model] if configured_model else ["flux-2-klein-9b"]
+        if "flux-2-klein-9b" not in models_to_try:
+            models_to_try.append("flux-2-klein-9b")
         last_error = None
 
         headers = {
             "accept": "application/json",
-            "x-key": self.api_key,
+            "x-key": self.current_api_key,
             "Content-Type": "application/json",
         }
         payload = {
             "prompt": prompt,
             "width": width,
             "height": height,
-            "prompt_upsampling": False,
             "safety_tolerance": 2,
             "output_format": "jpeg",
         }
+        if input_image:
+            payload["input_image"] = input_image
+        if input_image_2:
+            payload["input_image_2"] = input_image_2
         if seed is not None:
             payload["seed"] = seed
 
@@ -158,7 +174,7 @@ class BFLClient:
         endpoint_url = f"{self.base_url}/{target_model}"
         headers = {
             "accept": "application/json",
-            "x-key": self.api_key,
+            "x-key": self.current_api_key,
             "Content-Type": "application/json",
         }
         payload = {
