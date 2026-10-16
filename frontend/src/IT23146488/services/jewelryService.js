@@ -6,9 +6,9 @@ export const calculatePricing = async (specs) => {
     const payload = {
       category: specs.category || 'Ring',
       metal: specs.metal || '22KT Gold',
-      metal_weight_g: Number(specs.metal_weight_g || 4.5),
+      metal_weight_g: Number(specs.metal_weight_g || 5.0),
       gemstone: specs.gemstone || 'Blue Sapphire',
-      gemstone_weight_ct: Number(specs.gemstone_weight_ct || 2.0),
+      gemstone_weight_ct: Number(specs.gemstone_weight_ct || 2.5),
       setting_type: specs.setting_type || 'Prong',
       color_grade: specs.color_grade || 'Royal Blue',
       stone_grade: specs.stone_grade || 'AA (Fine Jewelry)',
@@ -16,16 +16,11 @@ export const calculatePricing = async (specs) => {
       number_of_accent_stones: Number(specs.number_of_accent_stones || 0),
     };
 
-    if (specs.team_member_gemstone) {
-      payload.team_member_gemstone = specs.team_member_gemstone;
-    }
-
     const response = await apiClient.post(`${API_PREFIX}/jewelry/price-estimate`, payload, {
       timeout: PREDICT_TIMEOUT_MS,
     });
     return response;
   } catch {
-    // Offline / fallback calculation grounded in empirical BOM formulas
     return calculateOfflineEstimate(specs);
   }
 };
@@ -38,120 +33,140 @@ export const fetchGemstoneCatalog = async () => {
   }
 };
 
+export const enhancePrompt = async ({
+  prompt = '',
+  gemstone = 'Blue Sapphire',
+  carats = '2.50',
+  metal = '22KT Gold',
+  metalWeight = '5.0',
+  style = 'Modern',
+}) => {
+  try {
+    const payload = {
+      prompt: prompt.trim() || `An exquisite ${style.toLowerCase()} ring featuring this ${gemstone}`,
+      gemstone,
+      gemstone_weight_ct: Number(carats) || 2.5,
+      metal,
+      metal_weight_g: Number(metalWeight) || 5.0,
+      aesthetic_style: style,
+    };
+
+    const response = await apiClient.post(`${API_PREFIX}/jewelry/enhance-prompt`, payload, {
+      timeout: 25000,
+    });
+
+    if (response?.enhanced_prompt) {
+      return response.enhanced_prompt;
+    }
+  } catch (err) {
+    console.log('Backend enhance-prompt fallback:', err);
+  }
+
+  // Client-side fallback if backend is offline
+  return buildClientEnhancedPrompt({ prompt, gemstone, carats, metal, metalWeight, style });
+};
+
 export const buildClientEnhancedPrompt = ({
   prompt = '',
-  category = 'Ring',
-  metal = '22KT Gold',
   gemstone = 'Blue Sapphire',
-  colorGrade = 'Royal Blue',
-  setting = 'Prong',
-  aestheticStyle = 'Modern',
   carats = '2.50',
+  metal = '22KT Gold',
+  metalWeight = '5.0',
+  style = 'Modern',
 }) => {
   const c = Number(carats) || 2.5;
   const scale = c >= 3.5 ? 'commanding centerpiece' : c >= 1.8 ? 'prominent centerpiece' : 'delicate centerpiece';
-  const cleanInput = (prompt || '').trim();
+  const cleanInput = (prompt || '').trim() || `A bespoke ${style.toLowerCase()} luxury ring showcasing a ${scale} ${c.toFixed(2)}ct natural ${gemstone}`;
 
-  // If user prompt is empty, generate an evocative bespoke concept
-  if (!cleanInput) {
-    return `A bespoke luxury ${category.toLowerCase()} featuring a ${scale} ${carats}ct ${colorGrade} Ceylon ${gemstone} held securely in an exquisite ${setting.toLowerCase()} setting crafted in polished ${metal}, ${aestheticStyle.toLowerCase()} architectural contours, macro studio jewelry photography, crisp facet reflections, high refraction dispersion, specular highlights, dark neutral studio backdrop, 8k resolution`;
-  }
-
-  // Intelligently transform common natural language phrases
   let coreVision = cleanInput;
   if (/multiple lines|lines of|several lines|multi line|multi-line/i.test(coreVision)) {
     coreVision = coreVision.replace(
       /with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines/gi,
       'featuring multiple intertwining fluid bands encrusted with micro-pavé melee lines'
     );
-  } else if (/\bhalo\b/i.test(coreVision) && !/micro-pavé halo/i.test(coreVision)) {
-    coreVision = coreVision.replace(/\bhalo\b/gi, 'delicate micro-pavé brilliant-cut diamond halo');
   }
 
-  // Capitalize first letter of core vision
   coreVision = coreVision.charAt(0).toUpperCase() + coreVision.slice(1);
-
-  // Check if core elements are already described by user
-  const hasStone = coreVision.toLowerCase().includes('sapphire') || coreVision.toLowerCase().includes('gem');
+  const hasGem = coreVision.toLowerCase().includes(gemstone.toLowerCase()) || coreVision.toLowerCase().includes('gem');
   const hasMetal = /gold|silver|platinum/i.test(coreVision);
-  const hasSetting = /prong|bezel|pave|channel|halo/i.test(coreVision);
-
-  const stoneClause = hasStone
-    ? `highlighting the ${scale} ${carats}ct ${colorGrade} Ceylon ${gemstone}`
-    : `featuring a ${scale} ${carats}ct ${colorGrade} Ceylon ${gemstone}`;
-
-  const settingClause = hasSetting ? '' : `secured in a refined ${setting.toLowerCase()} mount`;
-  const metalClause = hasMetal ? '' : `crafted in lustrous ${metal}`;
-
-  const studioTokens = [
-    `${aestheticStyle.toLowerCase()} aesthetic contours`,
-    'macro studio jewelry product photography',
-    'sharp facet reflections',
-    'high refraction dispersion',
-    'specular highlights',
-    'neutral studio lighting',
-    '8k resolution fine jewelry render',
-  ];
 
   const clauses = [coreVision];
-  if (!coreVision.toLowerCase().includes(colorGrade.toLowerCase())) {
-    clauses.push(stoneClause);
+  if (!hasGem) {
+    clauses.push(`featuring a ${scale} ${c.toFixed(2)}ct ${gemstone}`);
   }
-  if (settingClause) clauses.push(settingClause);
-  if (metalClause) clauses.push(metalClause);
-  clauses.push(...studioTokens);
+  if (!hasMetal) {
+    clauses.push(`crafted in lustrous ${metal} (${metalWeight}g)`);
+  }
 
+  const styleDirectives = {
+    Vintage: 'handcrafted vintage filigree detailing and Victorian milgrain flourishes',
+    Minimal: 'understated minimalist silhouette with slender delicate shank and refined low-profile setting',
+    Modern: 'contemporary architectural geometry with bold fluid contours',
+    'Royal Halo': 'majestic micro-pave diamond halo accentuating center stone brilliance',
+  };
+  if (styleDirectives[style]) {
+    clauses.push(styleDirectives[style]);
+  }
+
+  const studioTokens = [
+    'master goldsmith micro-prong architecture',
+    'openwork pavilion gallery rail',
+    'macro studio jewelry product photography',
+    'sharp facet reflections',
+    'high refractive dispersion',
+    'specular caustic highlights',
+    'neutral luxury studio lighting',
+    '8k resolution fine jewelry render',
+  ];
+  clauses.push(...studioTokens);
   return clauses.filter(Boolean).join(', ');
 };
 
-export const enhancePrompt = async (promptData) => {
-  try {
-    const response = await apiClient.post(`${API_PREFIX}/jewelry/enhance-prompt`, promptData);
-    if (response?.enhanced_prompt) {
-      return response.enhanced_prompt;
-    }
-    return buildClientEnhancedPrompt(promptData);
-  } catch {
-    return buildClientEnhancedPrompt(promptData);
-  }
-};
-
-export const generateDesignAndQuote = async (specs, imageAsset = null) => {
+export const generateDesignAndQuote = async (specs, gemImage = null, sketchImage = null) => {
   const form = new FormData();
-  form.append('category', specs.category);
-  form.append('metal', specs.metal);
-  form.append('metal_weight_g', String(specs.metal_weight_g));
-  form.append('gemstone', specs.gemstone);
-  form.append('gemstone_weight_ct', String(specs.gemstone_weight_ct));
-  form.append('setting_type', specs.setting_type);
-  form.append('color_grade', specs.color_grade);
-  form.append('stone_grade', specs.stone_grade);
-  form.append('treatment', specs.treatment);
-  form.append('number_of_accent_stones', String(specs.number_of_accent_stones || 0));
+  form.append('category', specs.category || 'Ring');
+  form.append('metal', specs.metal || '22KT Gold');
+  form.append('metal_weight_g', String(specs.metal_weight_g || '5.0'));
+  form.append('gemstone', specs.gemstone || 'Blue Sapphire');
+  form.append('gemstone_weight_ct', String(specs.gemstone_weight_ct || '2.50'));
+  form.append('setting_type', 'Prong');
+  form.append('color_grade', 'Royal Blue');
+  form.append('stone_grade', 'AA (Fine Jewelry)');
+  form.append('treatment', 'Heated');
+  form.append('number_of_accent_stones', '0');
   form.append('prompt', specs.prompt || '');
-  form.append('aesthetic_style', specs.aesthetic_style || 'Modern');
+  form.append('aesthetic_style', specs.aesthetic_style || specs.style || 'Modern');
 
-  if (specs.pipeline_option) {
-    form.append('pipeline_option', specs.pipeline_option);
-  }
-  if (specs.gemstone_asset_id) {
-    form.append('gemstone_asset_id', specs.gemstone_asset_id);
-  }
-  if (specs.team_member_gemstone) {
-    form.append('team_member_gemstone_json', JSON.stringify(specs.team_member_gemstone));
-  }
-  if (specs.reference_type) {
-    form.append('reference_type', specs.reference_type);
-  }
-
-  if (imageAsset) {
-    const uri = typeof imageAsset === 'string' ? imageAsset : imageAsset?.uri;
+  // If gem image is provided
+  if (gemImage) {
+    const uri = typeof gemImage === 'string' ? gemImage : gemImage?.uri;
     if (uri) {
       form.append('image', {
         uri,
-        name: 'jewelry-input.jpg',
+        name: 'gemstone.jpg',
         type: 'image/jpeg',
       });
+      form.append('reference_type', 'gemstone');
+    }
+  }
+
+  // If sketch image is provided
+  if (sketchImage) {
+    const sketchUri = typeof sketchImage === 'string' ? sketchImage : sketchImage?.uri;
+    if (sketchUri) {
+      form.append('sketch', {
+        uri: sketchUri,
+        name: 'sketch.jpg',
+        type: 'image/jpeg',
+      });
+      if (!gemImage) {
+        form.append('image', {
+          uri: sketchUri,
+          name: 'sketch.jpg',
+          type: 'image/jpeg',
+        });
+        form.append('reference_type', 'sketch');
+      }
     }
   }
 
@@ -160,67 +175,73 @@ export const generateDesignAndQuote = async (specs, imageAsset = null) => {
       timeout: PREDICT_TIMEOUT_MS,
     });
     return response;
-  } catch {
+  } catch (err) {
+    console.warn('generate-design API call failed, falling back:', err);
     return calculateOfflineEstimate(specs);
   }
 };
 
-const calculateOfflineEstimate = (specs) => {
-  const metalWeight = Number(specs.metal_weight_g || 4.5);
-  const gemWeight = Number(specs.gemstone_weight_ct || 2.0);
-  const accents = Number(specs.number_of_accent_stones || 0);
+export const calculateOfflineEstimate = (specs) => {
+  const metalWeight = Number(specs.metal_weight_g || 5.0);
+  const gemWeight = Number(specs.gemstone_weight_ct || 2.5);
+  const gemType = specs.gemstone || 'Blue Sapphire';
 
   // Spot metal rates (LKR/g)
-  const rates = {
+  const metalRates = {
     '24KT Gold': 36500,
     '22KT Gold': 33500,
     '18K Yellow Gold': 27500,
     '18K White Gold': 28200,
     '18K Rose Gold': 28000,
+    'Platinum': 19500,
     '925 Sterling Silver': 950,
-    Platinum: 19500,
   };
-  const rate = rates[specs.metal] || 33500;
-  const metalCost = metalWeight * rate * 1.1; // 10% wastage
+  const rate = metalRates[specs.metal] || 33500;
+  // 8% craft wastage
+  const metalCost = metalWeight * rate * 1.08;
 
-  // Empirical Ceylon Sapphire curve: Price = 385,076 * (carats)^1.28
-  const baseGem = 385076 * Math.pow(gemWeight, 1.28);
-  const gradeMul = specs.stone_grade?.includes('AAA')
-    ? 1.45
-    : specs.stone_grade?.includes('AA')
-    ? 1.0
-    : 0.75;
-  const gemCost = baseGem * gradeMul;
+  // Gemstone base curves (LKR based on carat power law)
+  const gemMultipliers = {
+    'Blue Sapphire': 1.0,
+    'Yellow Sapphire': 0.78,
+    'Padparadscha': 1.55,
+    'Ruby': 1.35,
+    'Emerald': 1.25,
+    'Diamond': 1.85,
+    'Other': 0.7,
+  };
+  const multiplier = gemMultipliers[gemType] || 1.0;
+  const baseGem = 385076 * Math.pow(gemWeight, 1.25) * multiplier;
 
-  // Verified Wadakuliya Labor
-  const labor = specs.category === 'Necklace' ? 13500 : specs.category === 'Earring' ? 4500 : 4000;
-  const settingCost = (accents + 1) * 800;
-  const accentGemCost = accents * 4200;
+  // Master goldsmith crafting, casting & gemstone setting labor
+  const artisanLabor = 18500;
+  const settingAndFinishing = 6500;
+  const craftingTotal = artisanLabor + settingAndFinishing;
 
-  const totalCost = metalCost + gemCost + labor + settingCost + accentGemCost;
+  const subtotal = Math.round(metalCost + baseGem + craftingTotal);
+  // Fair market pricing
+  const totalMarketPrice = Math.round(subtotal * 1.15);
 
   return {
     bom_breakdown: {
+      gemstone_cost_lkr: Math.round(baseGem),
       metal_cost_lkr: Math.round(metalCost),
-      gemstone_cost_lkr: Math.round(gemCost),
-      labor_cost_lkr: Math.round(labor),
-      setting_cost_lkr: Math.round(settingCost),
-      accent_cost_lkr: Math.round(accentGemCost),
-      total_manufacturing_cost_lkr: Math.round(totalCost),
+      labor_cost_lkr: Math.round(artisanLabor),
+      setting_cost_lkr: Math.round(settingAndFinishing),
+      total_crafting_cost_lkr: Math.round(craftingTotal),
+      subtotal_cost_lkr: subtotal,
+      total_manufacturing_cost_lkr: subtotal,
     },
     valuation: {
-      p10_wholesale_floor_lkr: Math.round(totalCost * 1.06),
-      p50_fair_market_price_lkr: Math.round(totalCost * 1.22),
-      p90_showroom_ceiling_lkr: Math.round(totalCost * 1.42),
+      p50_fair_market_price_lkr: totalMarketPrice,
     },
-    prompt: specs.prompt || 'A ring with multiple lines of this gem',
-    aesthetic_style: specs.aesthetic_style || 'Modern',
+    prompt: specs.prompt || 'Custom bespoke jewelry design',
     design_sample: specs.sample_index || 1,
-    audited_attributes: {
-      setting_type: specs.setting_type || 'Prong',
-      number_of_accent_stones: accents,
-      metal_tone: specs.metal?.includes('White') || specs.metal?.includes('Silver') ? 'White' : 'Yellow',
-      design_complexity: accents > 12 ? 'Complex' : 'Simple',
+    specs: {
+      gemstone: gemType,
+      gemstone_weight_ct: String(gemWeight),
+      metal: specs.metal || '22KT Gold',
+      metal_weight_g: String(metalWeight),
     },
   };
 };

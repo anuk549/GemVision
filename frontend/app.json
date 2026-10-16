@@ -36,7 +36,9 @@
           "photosPermission": "Allow Gemstone Studio to access your photos to analyse gemstones.",
           "cameraPermission": "Allow Gemstone Studio to use the camera to photograph gemstones."
         }
-      ]
+      ],
+      "expo-sharing",
+      "expo-asset"
     ]
   }
 }
