@@ -26,7 +26,7 @@ backend/assets/gem_inputs/
 
 # Model artifacts (large binaries)
 *.h5
-*.keras
+
 *.pb
 *.tflite
 *.onnx
