@@ -11,10 +11,19 @@ export default function SavedQuoteCard({ item, onSelect }) {
       {/* Top Header Row with Badges */}
       <View style={styles.topRow}>
         <View style={styles.badgeGroup}>
+          {item.category && (
+            <View style={styles.categoryBadge}>
+              <Icon name="sparkles" size={11} color={colors.emerald} />
+              <AppText variant="caption" weight="700" color={colors.emerald}>
+                {item.category}
+              </AppText>
+            </View>
+          )}
+
           {item.gemstone && (
             <View style={styles.gemBadge}>
-              <Icon name="diamond-outline" size={12} color={colors.emerald} />
-              <AppText variant="caption" weight="700" color={colors.emerald}>
+              <Icon name="diamond-outline" size={12} color={colors.sapphire} />
+              <AppText variant="caption" weight="700" color={colors.sapphire}>
                 {item.gemstone}
               </AppText>
             </View>
@@ -31,8 +40,8 @@ export default function SavedQuoteCard({ item, onSelect }) {
 
           {item.style && (
             <View style={styles.styleBadge}>
-              <Icon name="sparkles-outline" size={11} color={colors.sapphire} />
-              <AppText variant="caption" weight="600" color={colors.sapphire}>
+              <Icon name="color-palette-outline" size={11} color={colors.amber} />
+              <AppText variant="caption" weight="600" color={colors.amber}>
                 {item.style}
               </AppText>
             </View>
@@ -103,16 +112,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  gemBadge: {
+  categoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(37, 192, 138, 0.12)',
+    backgroundColor: 'rgba(37, 192, 138, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(37, 192, 138, 0.35)',
+    borderColor: 'rgba(37, 192, 138, 0.4)',
+  },
+  gemBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(78, 143, 237, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(78, 143, 237, 0.35)',
   },
   specBadge: {
     flexDirection: 'row',

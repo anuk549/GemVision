@@ -66,12 +66,10 @@ class GenerationPipelineCoordinator:
             scale_cue = "delicate centerpiece"
 
         if not user_p:
-            return (
-                f"A bespoke luxury {cat.lower()} featuring a {scale_cue} {request.color_grade or 'Royal Blue'} Ceylon {gem} "
-                f"held securely in an exquisite {setting.lower()} setting crafted in polished {metal}, "
-                f"{aesthetic.lower()} architectural contours, macro studio jewelry photography, "
-                f"sharp facet reflections, high refraction dispersion, specular highlights, dark neutral studio backdrop, 8k resolution, "
-                f"no text, no watermark, no typography, no labels, pristine fine jewelry render"
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=422,
+                detail="Design prompt is mandatory. User must enter a prompt describing their custom jewelry vision."
             )
 
         # Normalize raw numbers and units to prevent diffusion model from rendering typography on gemstone
@@ -145,8 +143,14 @@ class GenerationPipelineCoordinator:
         request: JewelryDesignRequest,
     ) -> JewelryDesignResponse:
         pipeline = request.pipeline_option or PipelineOptionEnum.HYBRID
-        raw_prompt = request.prompt or f"A bespoke luxury {request.category} in {request.metal} with {request.setting_type} setting"
-        aesthetic = request.aesthetic_style.value if hasattr(request.aesthetic_style, "value") else str(request.aesthetic_style or "Modern")
+        raw_prompt = (request.prompt or "").strip()
+        if not raw_prompt:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=422,
+                detail="Design prompt is mandatory. User must enter a prompt describing their custom jewelry vision."
+            )
+        aesthetic = request.aesthetic_style.value if hasattr(request.aesthetic_style, "value") else str(request.aesthetic_style)
 
         # Synthesize base prompt with studio conditioning instructions
         conditioned_prompt = self.build_studio_conditioned_prompt(request)
@@ -174,7 +178,8 @@ class GenerationPipelineCoordinator:
         # Priority 3: High-Res Local Design Sample (Offline fallback)
         rendered_image_b64: Optional[str] = None
         rendered_image_url: Optional[str] = None
-        execution_source = "mock_local"
+        execution_source = "black_forest_labs"
+        last_error: Optional[str] = None
 
         if bfl_client.is_configured():
             try:
@@ -188,7 +193,8 @@ class GenerationPipelineCoordinator:
                 rendered_image_url = bfl_res.get("image_url")
                 execution_source = "black_forest_labs"
             except Exception as ex:
-                logger.error(f"Black Forest Labs FLUX dispatch encountered an issue: {ex}. Checking RunPod/local fallback.")
+                last_error = f"Black Forest Labs FLUX dispatch error: {ex}"
+                logger.error(last_error)
 
         # Priority 2: RunPod Serverless Dispatch
         if not rendered_image_b64:
@@ -217,25 +223,16 @@ class GenerationPipelineCoordinator:
                         rendered_image_b64 = output.get("image_base64")
                         execution_source = "runpod"
                 except Exception as ex:
-                    logger.error(f"RunPod dispatch encountered an issue: {ex}. Using local mock render.")
+                    last_error = f"RunPod dispatch error: {ex}"
+                    logger.error(last_error)
 
-        # Local fallback if RunPod not yet configured / offline
+        # When image generation fails, DO NOT fall back to images in the assets folder!
         sample_index = 1
         if not rendered_image_b64:
-            if "vintage" in aesthetic.lower():
-                sample_index = 2
-            elif "minimal" in aesthetic.lower():
-                sample_index = 3
-            else:
-                sample_index = 1
-
-            sample_path = settings.DESIGNS_DIR / f"generated_design_{sample_index}.png"
-            if sample_path.exists():
-                try:
-                    img = Image.open(sample_path)
-                    rendered_image_b64 = pil_to_base64(img, format="PNG")
-                except Exception as ex:
-                    logger.error(f"Could not load sample render: {ex}")
+            from fastapi import HTTPException
+            err_msg = last_error or "Image generation failed: Could not obtain generated image from Black Forest Labs FLUX API."
+            logger.error(err_msg)
+            raise HTTPException(status_code=502, detail=err_msg)
 
         # 3. Visual Feature Audit (Gemini Vision)
         audit_raw = gemini_bridge.audit_features(

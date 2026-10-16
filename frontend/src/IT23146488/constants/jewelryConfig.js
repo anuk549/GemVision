@@ -59,11 +59,10 @@ export const DESIGN_STYLES = [
   { label: 'Royal Halo', value: 'Royal Halo', icon: 'sparkles-outline', description: 'Dazzling micro-pavé halo & regal presence' },
 ];
 
-export const DEFAULT_DESIGN_SPEC = {
-  gemstone: 'Blue Sapphire',
-  gemstone_weight_ct: '2.50',
-  metal: '22KT Gold',
-  metal_weight_g: '5.0',
-  style: 'Modern',
-  prompt: 'An elegant solitaire ring with graceful fluid curves holding the centerpiece gemstone',
-};
+export const JEWELRY_TYPES = [
+  { label: 'Ring', value: 'Ring', icon: 'ellipse-outline' },
+  { label: 'Necklace', value: 'Necklace', icon: 'infinite-outline' },
+  { label: 'Earrings', value: 'Earrings', icon: 'sparkles-outline' },
+  { label: 'Bracelet', value: 'Bracelet', icon: 'radio-button-off-outline' },
+];
+

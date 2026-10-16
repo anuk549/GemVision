@@ -1,0 +1,3 @@
+# Ensure machine learning model files maintain exact unix line endings
+backend/assets/models/**/*.txt text eol=lf
+*.joblib binary

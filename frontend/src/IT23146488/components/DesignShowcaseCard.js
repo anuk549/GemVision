@@ -13,19 +13,13 @@ import { AppText, Card, Icon } from '../../components';
 import { colors, radius, spacing } from '../../theme';
 import { saveImageToPhone, shareDesignImage } from '../utils/mediaUtils';
 
-const SAMPLE_IMAGES = {
-  1: require('../../../assets/designs/generated_design_1.png'),
-  2: require('../../../assets/designs/generated_design_2.png'),
-  3: require('../../../assets/designs/generated_design_3.png'),
-};
-
 export default function DesignShowcaseCard({ design }) {
   const [saving, setSaving] = useState(false);
   const [fullViewVisible, setFullViewVisible] = useState(false);
 
   if (!design) return null;
 
-  // Resolve image source: prioritize direct BFL image URL, then BFL Base64 data, then sample fallback
+  // Resolve image source: prioritize direct BFL image URL, then BFL Base64 data (NEVER fall back to asset files)
   let imageSource = null;
   if (design.image_url) {
     imageSource = { uri: design.image_url };
@@ -34,8 +28,6 @@ export default function DesignShowcaseCard({ design }) {
       ? design.image_base64
       : `data:image/jpeg;base64,${design.image_base64}`;
     imageSource = { uri: b64 };
-  } else {
-    imageSource = SAMPLE_IMAGES[design.design_sample || 1] || SAMPLE_IMAGES[1];
   }
 
   const handleSaveToPhone = async () => {
@@ -60,6 +52,7 @@ export default function DesignShowcaseCard({ design }) {
     );
   };
 
+  const categoryText = design.specs?.category || design.specs?.jewelryType || null;
   const gemText = design.specs?.gemstone
     ? `${design.specs.gemstone} (${design.specs.gemstone_weight_ct || '2.5'}ct)`
     : null;
@@ -72,44 +65,61 @@ export default function DesignShowcaseCard({ design }) {
     <>
       <Card style={styles.card}>
         {/* Generated Design Image View - Tap to open Full Image */}
-        <Pressable
-          style={styles.imageWrapper}
-          onPress={() => setFullViewVisible(true)}
-          activeOpacity={0.92}
-        >
-          <Image source={imageSource} style={styles.image} resizeMode="contain" />
+        {imageSource ? (
+          <Pressable
+            style={styles.imageWrapper}
+            onPress={() => setFullViewVisible(true)}
+            activeOpacity={0.92}
+          >
+            <Image source={imageSource} style={styles.image} resizeMode="contain" />
 
-          {/* Top Badges */}
-          <View style={styles.badgeRow}>
-            <View style={styles.customBadge}>
-              <Icon name="sparkles" size={13} color={colors.emerald} />
-              <AppText variant="caption" weight="700" color={colors.emerald}>
-                Custom Jewelry Design
-              </AppText>
+            {/* Top Badges */}
+            <View style={styles.badgeRow}>
+              <View style={styles.customBadge}>
+                <Icon name="sparkles" size={13} color={colors.emerald} />
+                <AppText variant="caption" weight="700" color={colors.emerald}>
+                  Custom Jewelry Design
+                </AppText>
+              </View>
+
+              <View style={styles.fullViewBadge}>
+                <Icon name="expand-outline" size={13} color="#FFFFFF" />
+                <AppText variant="caption" weight="700" color="#FFFFFF">
+                  Full View
+                </AppText>
+              </View>
             </View>
 
-            <View style={styles.fullViewBadge}>
-              <Icon name="expand-outline" size={13} color="#FFFFFF" />
-              <AppText variant="caption" weight="700" color="#FFFFFF">
-                Full View
+            {/* Bottom subtle hint overlay */}
+            <View style={styles.tapHintOverlay}>
+              <Icon name="scan-outline" size={13} color="rgba(255, 255, 255, 0.85)" />
+              <AppText variant="caption" weight="600" color="rgba(255, 255, 255, 0.85)">
+                Tap to view full uncropped design
               </AppText>
             </View>
-          </View>
-
-          {/* Bottom subtle hint overlay */}
-          <View style={styles.tapHintOverlay}>
-            <Icon name="scan-outline" size={13} color="rgba(255, 255, 255, 0.85)" />
-            <AppText variant="caption" weight="600" color="rgba(255, 255, 255, 0.85)">
-              Tap to view full uncropped design
+          </Pressable>
+        ) : (
+          <View style={[styles.imageWrapper, { justifyContent: 'center', alignItems: 'center', minHeight: 200, backgroundColor: '#0A0F1A' }]}>
+            <Icon name="image-outline" size={36} color={colors.textMuted} />
+            <AppText variant="caption" color={colors.textMuted} style={{ marginTop: 8 }}>
+              No image generated
             </AppText>
           </View>
-        </Pressable>
+        )}
 
         {/* Card Body */}
         <View style={styles.body}>
           {/* Quick Spec Pills */}
-          {(gemText || metalText || styleText) && (
+          {(categoryText || gemText || metalText || styleText) && (
             <View style={styles.pillRow}>
+              {categoryText && (
+                <View style={styles.specPill}>
+                  <Icon name="sparkles-outline" size={13} color={colors.emerald} />
+                  <AppText variant="caption" weight="600" color={colors.text}>
+                    {categoryText}
+                  </AppText>
+                </View>
+              )}
               {gemText && (
                 <View style={styles.specPill}>
                   <Icon name="diamond-outline" size={13} color={colors.sapphire} />

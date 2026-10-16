@@ -2,27 +2,23 @@ import { API_PREFIX, PREDICT_TIMEOUT_MS } from '../../config/api';
 import { apiClient } from '../../services/client';
 
 export const calculatePricing = async (specs) => {
-  try {
-    const payload = {
-      category: specs.category || 'Ring',
-      metal: specs.metal || '22KT Gold',
-      metal_weight_g: Number(specs.metal_weight_g || 5.0),
-      gemstone: specs.gemstone || 'Blue Sapphire',
-      gemstone_weight_ct: Number(specs.gemstone_weight_ct || 2.5),
-      setting_type: specs.setting_type || 'Prong',
-      color_grade: specs.color_grade || 'Royal Blue',
-      stone_grade: specs.stone_grade || 'AA (Fine Jewelry)',
-      treatment: specs.treatment || 'Heated',
-      number_of_accent_stones: Number(specs.number_of_accent_stones || 0),
-    };
+  const payload = {
+    category: specs.category || 'Ring',
+    metal: specs.metal || '22KT Gold',
+    metal_weight_g: Number(specs.metal_weight_g || 5.0),
+    gemstone: specs.gemstone || 'Blue Sapphire',
+    gemstone_weight_ct: Number(specs.gemstone_weight_ct || 2.5),
+    setting_type: specs.setting_type || 'Prong',
+    color_grade: specs.color_grade || 'Royal Blue',
+    stone_grade: specs.stone_grade || 'AA (Fine Jewelry)',
+    treatment: specs.treatment || 'Heated',
+    number_of_accent_stones: Number(specs.number_of_accent_stones || 0),
+    design_complexity: specs.design_complexity || 'Simple',
+  };
 
-    const response = await apiClient.post(`${API_PREFIX}/jewelry/price-estimate`, payload, {
-      timeout: PREDICT_TIMEOUT_MS,
-    });
-    return response;
-  } catch {
-    return calculateOfflineEstimate(specs);
-  }
+  return await apiClient.post(`${API_PREFIX}/jewelry/price-estimate`, payload, {
+    timeout: PREDICT_TIMEOUT_MS,
+  });
 };
 
 export const fetchGemstoneCatalog = async () => {
@@ -35,6 +31,7 @@ export const fetchGemstoneCatalog = async () => {
 
 export const enhancePrompt = async ({
   prompt = '',
+  category = 'Ring',
   gemstone = 'Blue Sapphire',
   carats = '2.50',
   metal = '22KT Gold',
@@ -43,7 +40,8 @@ export const enhancePrompt = async ({
 }) => {
   try {
     const payload = {
-      prompt: prompt.trim() || `An exquisite ${style.toLowerCase()} ring featuring this ${gemstone}`,
+      prompt: prompt.trim() || `An exquisite ${style.toLowerCase()} ${category.toLowerCase()} featuring this ${gemstone}`,
+      category,
       gemstone,
       gemstone_weight_ct: Number(carats) || 2.5,
       metal,
@@ -63,7 +61,7 @@ export const enhancePrompt = async ({
   }
 
   // Client-side fallback if backend is offline
-  return buildClientEnhancedPrompt({ prompt, gemstone, carats, metal, metalWeight, style });
+  return buildClientEnhancedPrompt({ prompt, category, gemstone, carats, metal, metalWeight, style });
 };
 
 export const buildClientEnhancedPrompt = ({
@@ -170,78 +168,8 @@ export const generateDesignAndQuote = async (specs, gemImage = null, sketchImage
     }
   }
 
-  try {
-    const response = await apiClient.post(`${API_PREFIX}/jewelry/generate-design`, form, {
-      timeout: PREDICT_TIMEOUT_MS,
-    });
-    return response;
-  } catch (err) {
-    console.warn('generate-design API call failed, falling back:', err);
-    return calculateOfflineEstimate(specs);
-  }
+  return await apiClient.post(`${API_PREFIX}/jewelry/generate-design`, form, {
+    timeout: PREDICT_TIMEOUT_MS,
+  });
 };
 
-export const calculateOfflineEstimate = (specs) => {
-  const metalWeight = Number(specs.metal_weight_g || 5.0);
-  const gemWeight = Number(specs.gemstone_weight_ct || 2.5);
-  const gemType = specs.gemstone || 'Blue Sapphire';
-
-  // Spot metal rates (LKR/g)
-  const metalRates = {
-    '24KT Gold': 36500,
-    '22KT Gold': 33500,
-    '18K Yellow Gold': 27500,
-    '18K White Gold': 28200,
-    '18K Rose Gold': 28000,
-    'Platinum': 19500,
-    '925 Sterling Silver': 950,
-  };
-  const rate = metalRates[specs.metal] || 33500;
-  // 8% craft wastage
-  const metalCost = metalWeight * rate * 1.08;
-
-  // Gemstone base curves (LKR based on carat power law)
-  const gemMultipliers = {
-    'Blue Sapphire': 1.0,
-    'Yellow Sapphire': 0.78,
-    'Padparadscha': 1.55,
-    'Ruby': 1.35,
-    'Emerald': 1.25,
-    'Diamond': 1.85,
-    'Other': 0.7,
-  };
-  const multiplier = gemMultipliers[gemType] || 1.0;
-  const baseGem = 385076 * Math.pow(gemWeight, 1.25) * multiplier;
-
-  // Master goldsmith crafting, casting & gemstone setting labor
-  const artisanLabor = 18500;
-  const settingAndFinishing = 6500;
-  const craftingTotal = artisanLabor + settingAndFinishing;
-
-  const subtotal = Math.round(metalCost + baseGem + craftingTotal);
-  // Fair market pricing
-  const totalMarketPrice = Math.round(subtotal * 1.15);
-
-  return {
-    bom_breakdown: {
-      gemstone_cost_lkr: Math.round(baseGem),
-      metal_cost_lkr: Math.round(metalCost),
-      labor_cost_lkr: Math.round(artisanLabor),
-      setting_cost_lkr: Math.round(settingAndFinishing),
-      total_crafting_cost_lkr: Math.round(craftingTotal),
-      subtotal_cost_lkr: subtotal,
-      total_manufacturing_cost_lkr: subtotal,
-    },
-    valuation: {
-      p50_fair_market_price_lkr: totalMarketPrice,
-    },
-    prompt: specs.prompt || 'Custom bespoke jewelry design',
-    design_sample: specs.sample_index || 1,
-    specs: {
-      gemstone: gemType,
-      gemstone_weight_ct: String(gemWeight),
-      metal: specs.metal || '22KT Gold',
-      metal_weight_g: String(metalWeight),
-    },
-  };
-};

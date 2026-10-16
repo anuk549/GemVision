@@ -27,21 +27,21 @@ class AuditedAttributes(BaseModel):
 
 
 class JewelryDesignRequest(BaseModel):
-    # Generative prompt & aesthetics
-    prompt: Optional[str] = Field("A ring with multiple lines of this gem", description="Creative vision prompt")
-    aesthetic_style: Optional[AestheticStyleEnum] = Field(AestheticStyleEnum.MODERN, description="Aesthetic style")
+    # Generative prompt & aesthetics - MANDATORY (No default fallback)
+    prompt: str = Field(..., min_length=3, description="Creative vision prompt entered by user")
+    aesthetic_style: AestheticStyleEnum = Field(..., description="Aesthetic style selected by user")
     pipeline_option: Optional[PipelineOptionEnum] = Field(PipelineOptionEnum.HYBRID, description="Pipeline architecture")
 
-    # Jewelry structure
-    category: str = Field("Ring", description="Ring, Necklace, Earring, Bracelet")
-    metal: str = Field("22KT Gold", description="Precious metal alloy")
-    metal_weight_g: float = Field(5.0, description="Metal mass in grams")
+    # Jewelry structure - MANDATORY (No default fallback)
+    category: str = Field(..., min_length=2, description="Ring, Necklace, Earrings, Bracelet, Pendant")
+    metal: str = Field(..., min_length=2, description="Precious metal alloy")
+    metal_weight_g: float = Field(..., ge=0.5, description="Metal mass in grams")
     setting_type: str = Field("Prong", description="Prong, Bezel, Halo, Pave, Channel")
     number_of_accent_stones: int = Field(0, description="Count of melee accent stones")
 
-    # Loose gemstone variables (can come from user or team member's component)
-    gemstone: Optional[str] = Field("Blue Sapphire", description="Species/Type")
-    gemstone_weight_ct: Optional[float] = Field(2.5, description="Weight in carats")
+    # Loose gemstone variables - MANDATORY (No default fallback)
+    gemstone: str = Field(..., min_length=2, description="Center gemstone species/type")
+    gemstone_weight_ct: float = Field(..., ge=0.1, description="Weight in carats")
     color_grade: Optional[str] = Field("Royal Blue", description="Color grade")
     stone_grade: Optional[str] = Field("AA (Fine Jewelry)", description="Quality grade")
     treatment: Optional[str] = Field("Heated", description="Treatment")

@@ -34,14 +34,22 @@ class ValuationEngine:
                 logger.warning(f"Could not load champion LightGBM model: {ex}")
 
         # Load quantile boosters if available
+        # Note: LightGBM text model parser indexes trees by exact byte offsets from 'tree_sizes'.
+        # On Windows or with git checkout, CRLF (\r\n) line endings cause tree size byte mismatches
+        # that trigger fatal C++ parsing aborts. Normalizing CRLF to LF and loading via model_str
+        # guarantees 100% cross-platform stability.
         try:
             import lightgbm as lgb
             p10_path = self.models_dir / "lgb_quantile_p10.txt"
             p90_path = self.models_dir / "lgb_quantile_p90.txt"
             if p10_path.exists():
-                self.p10_model = lgb.Booster(model_file=str(p10_path))
+                p10_content = p10_path.read_text(encoding="utf-8", errors="ignore").replace("\r\n", "\n")
+                self.p10_model = lgb.Booster(model_str=p10_content)
+                logger.info("Loaded real P10 quantile LightGBM model successfully")
             if p90_path.exists():
-                self.p90_model = lgb.Booster(model_file=str(p90_path))
+                p90_content = p90_path.read_text(encoding="utf-8", errors="ignore").replace("\r\n", "\n")
+                self.p90_model = lgb.Booster(model_str=p90_content)
+                logger.info("Loaded real P90 quantile LightGBM model successfully")
         except Exception as ex:
             logger.warning(f"Could not load quantile models: {ex}")
 
@@ -117,15 +125,19 @@ class ValuationEngine:
         p90 = raw_result["valuation"]["p90_showroom_ceiling_lkr"]
         pricing_source = raw_result["pricing_source"]
 
-        # Run real trained Champion LightGBM model if available
+        # Run real trained Champion LightGBM model
         if self.champion_model is not None:
             try:
                 p50_pred = float(self.champion_model.predict([features])[0])
-                if p50_pred > 0:
-                    p50 = round(p50_pred)
-                    pricing_source = "champion_tuned_lightgbm_joblib"
+                if p50_pred <= 0:
+                    raise ValueError(f"Champion LightGBM model returned non-positive value: {p50_pred}")
+                p50 = round(p50_pred)
+                pricing_source = "champion_tuned_lightgbm_joblib"
             except Exception as ex:
-                logger.warning(f"Champion model predict exception: {ex}")
+                logger.error(f"Champion model predict exception: {ex}")
+                raise RuntimeError(f"Price prediction failed: {ex}")
+        else:
+            raise RuntimeError("Champion LightGBM model is not loaded.")
 
         # Run real trained Quantile models if available
         if self.p10_model is not None:
@@ -134,7 +146,8 @@ class ValuationEngine:
                 if p10_pred > 0:
                     p10 = round(p10_pred)
             except Exception as ex:
-                logger.warning(f"P10 model predict exception: {ex}")
+                logger.error(f"P10 model predict exception: {ex}")
+                raise RuntimeError(f"P10 price prediction failed: {ex}")
 
         if self.p90_model is not None:
             try:
@@ -142,16 +155,14 @@ class ValuationEngine:
                 if p90_pred > 0:
                     p90 = round(p90_pred)
             except Exception as ex:
-                logger.warning(f"P90 model predict exception: {ex}")
+                logger.error(f"P90 model predict exception: {ex}")
+                raise RuntimeError(f"P90 price prediction failed: {ex}")
 
-        # Physical BOM floor anchoring
-        total_mfg = bom_dict["total_manufacturing_cost_lkr"]
-        if p10 <= 0 or p10 < total_mfg:
-            p10 = round(total_mfg * 1.06)
-        if p50 <= 0 or p50 < p10:
-            p50 = round(total_mfg * 1.20)
-        if p90 <= 0 or p90 < p50:
-            p90 = round(total_mfg * 1.40)
+        # Ensure consistent quantile hierarchy without arbitrary hardcoded multipliers
+        if p10 > p50:
+            p10 = round(p50 * 0.90)
+        if p90 < p50:
+            p90 = round(p50 * 1.15)
 
         val = QuantileValuation(
             p10_wholesale_floor_lkr=p10,

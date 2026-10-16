@@ -75,26 +75,56 @@ async def generate_jewelry_design(request: Request):
             except ValueError:
                 pass
 
+        user_prompt = (form.get("prompt") or "").strip()
+        if not user_prompt:
+            raise HTTPException(status_code=422, detail="Design prompt is mandatory. Please provide a description of your custom jewelry design.")
+
+        category = form.get("category")
+        if not category:
+            raise HTTPException(status_code=422, detail="Jewelry category is mandatory.")
+
+        metal = form.get("metal")
+        if not metal:
+            raise HTTPException(status_code=422, detail="Precious metal alloy is mandatory.")
+
+        gemstone = form.get("gemstone")
+        if not gemstone:
+            raise HTTPException(status_code=422, detail="Gemstone species is mandatory.")
+
+        try:
+            metal_weight_g = float(form.get("metal_weight_g") or 0)
+            if metal_weight_g < 0.5:
+                raise ValueError()
+        except Exception:
+            raise HTTPException(status_code=422, detail="Metal weight (g) must be at least 0.5 grams.")
+
+        try:
+            gemstone_weight_ct = float(form.get("gemstone_weight_ct") or 0)
+            if gemstone_weight_ct < 0.1:
+                raise ValueError()
+        except Exception:
+            raise HTTPException(status_code=422, detail="Gemstone carat weight (ct) must be at least 0.1 carats.")
+
         aesthetic_raw = form.get("aesthetic_style")
-        aesthetic_enum = AestheticStyleEnum.MODERN
-        if aesthetic_raw:
-            try:
-                aesthetic_enum = AestheticStyleEnum(aesthetic_raw)
-            except ValueError:
-                pass
+        if not aesthetic_raw:
+            raise HTTPException(status_code=422, detail="Design aesthetic style is mandatory.")
+        try:
+            aesthetic_enum = AestheticStyleEnum(aesthetic_raw)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Invalid aesthetic style: {aesthetic_raw}")
 
         req = JewelryDesignRequest(
-            category=form.get("category") or "Ring",
-            metal=form.get("metal") or "22KT Gold",
-            metal_weight_g=float(form.get("metal_weight_g") or 5.0),
-            gemstone=form.get("gemstone") or "Blue Sapphire",
-            gemstone_weight_ct=float(form.get("gemstone_weight_ct") or 2.5),
+            category=category,
+            metal=metal,
+            metal_weight_g=metal_weight_g,
+            gemstone=gemstone,
+            gemstone_weight_ct=gemstone_weight_ct,
             setting_type=form.get("setting_type") or "Prong",
             color_grade=form.get("color_grade") or "Royal Blue",
             stone_grade=form.get("stone_grade") or "AA (Fine Jewelry)",
             treatment=form.get("treatment") or "Heated",
             number_of_accent_stones=int(form.get("number_of_accent_stones") or 0),
-            prompt=form.get("prompt") or "A ring with multiple lines of this gem",
+            prompt=user_prompt,
             aesthetic_style=aesthetic_enum,
             pipeline_option=pipeline_enum,
             gemstone_asset_id=form.get("gemstone_asset_id"),
@@ -113,21 +143,25 @@ async def estimate_jewelry_pricing(request: PriceEstimateRequest):
     Fast pricing engine: Calculates BOM breakdown and P10/P50/P90 market valuation intervals.
     Incorporates loose gemstone variables (weight, color, shape, size, price) from other team members.
     """
-    result = valuation_engine.evaluate_quotation(
-        category=request.category,
-        metal=request.metal,
-        metal_weight_g=request.metal_weight_g,
-        gemstone=request.gemstone,
-        gemstone_weight_ct=request.gemstone_weight_ct,
-        color_grade=request.color_grade,
-        stone_grade=request.stone_grade,
-        treatment=request.treatment,
-        setting_type=request.setting_type,
-        number_of_accent_stones=request.number_of_accent_stones,
-        design_complexity=request.design_complexity or "Simple",
-        team_member_gemstone=request.team_member_gemstone,
-    )
-    return result
+    try:
+        result = valuation_engine.evaluate_quotation(
+            category=request.category,
+            metal=request.metal,
+            metal_weight_g=request.metal_weight_g,
+            gemstone=request.gemstone,
+            gemstone_weight_ct=request.gemstone_weight_ct,
+            color_grade=request.color_grade,
+            stone_grade=request.stone_grade,
+            treatment=request.treatment,
+            setting_type=request.setting_type,
+            number_of_accent_stones=request.number_of_accent_stones,
+            design_complexity=request.design_complexity or "Simple",
+            team_member_gemstone=request.team_member_gemstone,
+        )
+        return result
+    except Exception as ex:
+        logger.error(f"Price estimation failed: {ex}")
+        raise HTTPException(status_code=500, detail=f"Price estimation failed: {str(ex)}")
 
 
 @router.post("/stage-canvas", response_model=CanvasStagingResponse)

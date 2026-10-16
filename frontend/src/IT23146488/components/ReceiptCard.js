@@ -17,6 +17,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
 
   if (!estimate) return null;
 
+  const categoryName = specs?.category || estimate.specs?.category || 'Ring';
   const gemName = specs?.gemstone || estimate.specs?.gemstone || 'Center Gemstone';
   const gemCarats = specs?.gemstone_weight_ct || estimate.specs?.gemstone_weight_ct || '2.50';
   const metalName = specs?.metal || estimate.specs?.metal || '22KT Gold';
@@ -24,8 +25,8 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
 
   const gemCost = bom.gemstone_cost_lkr || 0;
   const metalCost = bom.metal_cost_lkr || 0;
-  const laborCost = (bom.labor_cost_lkr || 18500) + (bom.setting_cost_lkr || 6500);
-  const subtotal = bom.subtotal_cost_lkr || (gemCost + metalCost + laborCost);
+  const laborCost = (bom.labor_cost_lkr || 0) + (bom.setting_cost_lkr || 0) + (bom.accent_cost_lkr || 0);
+  const subtotal = bom.total_manufacturing_cost_lkr || (gemCost + metalCost + laborCost);
   const totalPrice = val.p50_fair_market_price_lkr || subtotal;
 
   const receiptDate = new Date().toLocaleDateString('en-GB', {
@@ -60,6 +61,9 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
           </AppText>
 
           <View style={styles.metaRow}>
+            <AppText variant="caption" color={colors.emerald} weight="700" style={styles.monoText}>
+              {categoryName.toUpperCase()}
+            </AppText>
             <AppText variant="caption" color={colors.textMuted} style={styles.monoText}>
               Receipt: {receiptId}
             </AppText>

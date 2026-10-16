@@ -26,6 +26,7 @@ import {
   CARAT_PRESETS,
   DESIGN_STYLES,
   GEMSTONE_TYPES,
+  JEWELRY_TYPES,
   METAL_ALLOYS,
   METAL_WEIGHT_PRESETS,
   NON_SAPPHIRE_GEMS,
@@ -44,14 +45,16 @@ const PAGE_SIZE = 4;
 export default function JewelryDesignScreen() {
   const scrollViewRef = useRef(null);
 
-  // User input states
+  // User input states (Unselected by default - user must explicitly select/enter each)
+  const [jewelryType, setJewelryType] = useState(null);
   const [prompt, setPrompt] = useState('');
+  const [promptError, setPromptError] = useState('');
   const [originalPrompt, setOriginalPrompt] = useState('');
   const [isEnhanced, setIsEnhanced] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
-  const [gemstone, setGemstone] = useState('Blue Sapphire');
-  const [metal, setMetal] = useState('22KT Gold');
-  const [styleAesthetic, setStyleAesthetic] = useState('Modern');
+  const [gemstone, setGemstone] = useState(null);
+  const [metal, setMetal] = useState(null);
+  const [styleAesthetic, setStyleAesthetic] = useState(null);
   const [specsExpanded, setSpecsExpanded] = useState(true);
 
   // Detect non-sapphire stones mentioned in user prompt for real-time pricing notice
@@ -91,8 +94,8 @@ export default function JewelryDesignScreen() {
 
   const form = useForm({
     initialValues: {
-      carats: '2.50',
-      metalWeight: '5.0',
+      carats: '',
+      metalWeight: '',
     },
     validationSchema: {
       carats: [
@@ -121,11 +124,25 @@ export default function JewelryDesignScreen() {
       return;
     }
 
+    const cleanPrompt = prompt.trim();
+    if (!cleanPrompt) {
+      setPromptError('Please enter a design prompt first before enhancing.');
+      setPopup({
+        visible: true,
+        type: 'error',
+        title: 'Prompt Required',
+        message: 'Please enter your jewelry design idea first so AI can enhance it.',
+      });
+      return;
+    }
+    setPromptError('');
+
     setEnhancing(true);
     try {
       setOriginalPrompt(prompt);
       const enhanced = await enhancePrompt({
-        prompt,
+        prompt: cleanPrompt,
+        category: jewelryType,
         gemstone,
         carats: form.values.carats,
         metal,
@@ -147,9 +164,58 @@ export default function JewelryDesignScreen() {
   };
 
   const handleGenerate = async () => {
-    const activePrompt =
-      prompt.trim() ||
-      `An exquisite bespoke ${styleAesthetic.toLowerCase()} ring featuring a ${form.values.carats}ct ${gemstone} set in ${metal}`;
+    const cleanPrompt = prompt.trim();
+    if (!cleanPrompt) {
+      setPromptError('Creative vision prompt is mandatory. Please describe your custom jewelry idea.');
+      setPopup({
+        visible: true,
+        type: 'error',
+        title: 'Design Prompt Required',
+        message: 'Please enter a design prompt describing your custom jewelry idea before generating.',
+      });
+      return;
+    }
+    setPromptError('');
+
+    if (!jewelryType) {
+      setPopup({
+        visible: true,
+        type: 'error',
+        title: 'Jewelry Type Required',
+        message: 'Please select a jewelry category (Ring, Necklace, Earrings, Bracelet, Pendant).',
+      });
+      return;
+    }
+
+    if (!gemstone) {
+      setPopup({
+        visible: true,
+        type: 'error',
+        title: 'Center Gemstone Required',
+        message: 'Please select a center gemstone (Blue Sapphire, Yellow Sapphire).',
+      });
+      return;
+    }
+
+    if (!metal) {
+      setPopup({
+        visible: true,
+        type: 'error',
+        title: 'Precious Metal Required',
+        message: 'Please select a precious metal alloy.',
+      });
+      return;
+    }
+
+    if (!styleAesthetic) {
+      setPopup({
+        visible: true,
+        type: 'error',
+        title: 'Design Style Required',
+        message: 'Please select an aesthetic style (Modern, Vintage, Minimal, Royal Halo).',
+      });
+      return;
+    }
 
     setGenerating(true);
     setProgress(0.2);
@@ -162,13 +228,14 @@ export default function JewelryDesignScreen() {
       setSampleCounter(nextSample);
 
       const spec = {
+        category: jewelryType,
         gemstone,
         gemstone_weight_ct: values.carats,
         metal,
         metal_weight_g: values.metalWeight,
         aesthetic_style: styleAesthetic,
         style: styleAesthetic,
-        prompt: activePrompt,
+        prompt: cleanPrompt,
         sample_index: nextSample,
       };
 
@@ -185,11 +252,17 @@ export default function JewelryDesignScreen() {
     setGenerating(false);
 
     if (!outcome?.ok || !outcome?.result) {
+      const errorMsg =
+        outcome?.error?.response?.data?.detail ||
+        outcome?.error?.message ||
+        (outcome?.errors
+          ? 'Ensure gemstone carats and metal weight (grams) are valid positive numbers.'
+          : 'Jewelry design generation encountered an issue. Please try again.');
       setPopup({
         visible: true,
         type: 'error',
-        title: 'Please check your inputs',
-        message: 'Ensure gemstone carats and metal weight (grams) are valid positive numbers.',
+        title: 'Generation Notice',
+        message: String(errorMsg),
       });
       return;
     }
@@ -202,6 +275,7 @@ export default function JewelryDesignScreen() {
       {
         id: String(Date.now()),
         title: spec.prompt.slice(0, 42) + (spec.prompt.length > 42 ? '…' : ''),
+        category: jewelryType,
         gemstone: `${spec.gemstone} (${spec.gemstone_weight_ct}ct)`,
         metal: `${spec.metal} (${spec.metal_weight_g}g)`,
         style: styleAesthetic,
@@ -317,6 +391,13 @@ export default function JewelryDesignScreen() {
                 <AppText variant="label" weight="800" color={colors.emerald} style={styles.sectionLabel}>
                   2. DESIGN PROMPT
                 </AppText>
+                {!prompt?.trim() && (
+                  <View style={styles.mandatoryBadge}>
+                    <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                      * REQUIRED
+                    </AppText>
+                  </View>
+                )}
               </View>
               <View style={styles.promptHeaderActions}>
                 {prompt.length > 0 && (
@@ -355,10 +436,13 @@ export default function JewelryDesignScreen() {
 
             <Input
               multiline
-              placeholder="Describe your design (e.g. A delicate solitaire ring with intertwined flowing botanical vines holding the gemstone securely)"
+              required
+              error={promptError}
+              placeholder="Describe your design vision in detail (e.g. A delicate solitaire ring with intertwined flowing botanical vines holding the gemstone securely) *"
               value={prompt}
               onChangeText={(text) => {
                 setPrompt(text);
+                if (promptError) setPromptError('');
                 if (isEnhanced) setIsEnhanced(false);
               }}
               style={styles.promptInputWrapper}
@@ -393,6 +477,13 @@ export default function JewelryDesignScreen() {
                 <AppText variant="label" weight="800" color={colors.emerald} style={styles.sectionLabel}>
                   3. SPECIFICATIONS
                 </AppText>
+                {(!jewelryType || !gemstone || !form.values.carats?.toString().trim() || !metal || !form.values.metalWeight?.toString().trim() || !styleAesthetic) && (
+                  <View style={styles.mandatoryBadge}>
+                    <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                      * REQUIRED
+                    </AppText>
+                  </View>
+                )}
               </View>
               <View style={styles.collapseTogglePill}>
                 <AppText variant="caption" weight="700" color={colors.emerald}>
@@ -414,21 +505,27 @@ export default function JewelryDesignScreen() {
               >
                 <View style={styles.collapsedSummaryItems}>
                   <View style={styles.summaryItemPill}>
-                    <Icon name="diamond-outline" size={12} color={colors.emerald} />
+                    <Icon name="sparkles" size={12} color={colors.emerald} />
                     <AppText variant="caption" weight="700" color={colors.emerald}>
-                      {gemstone} ({form.values.carats}ct)
+                      {jewelryType || 'Select Type'}
+                    </AppText>
+                  </View>
+                  <View style={styles.summaryItemPill}>
+                    <Icon name="diamond-outline" size={12} color={colors.sapphire} />
+                    <AppText variant="caption" weight="600" color={colors.sapphire}>
+                      {gemstone ? `${gemstone}${form.values.carats ? ` (${form.values.carats}ct)` : ''}` : 'Select Gemstone'}
                     </AppText>
                   </View>
                   <View style={styles.summaryItemPill}>
                     <Icon name="hardware-chip-outline" size={12} color={colors.textMuted} />
                     <AppText variant="caption" weight="600" color={colors.textMuted}>
-                      {metal} ({form.values.metalWeight}g)
+                      {metal ? `${metal}${form.values.metalWeight ? ` (${form.values.metalWeight}g)` : ''}` : 'Select Metal'}
                     </AppText>
                   </View>
                   <View style={styles.summaryItemPill}>
-                    <Icon name="sparkles-outline" size={12} color={colors.sapphire} />
-                    <AppText variant="caption" weight="600" color={colors.sapphire}>
-                      {styleAesthetic}
+                    <Icon name="color-palette-outline" size={12} color={colors.amber} />
+                    <AppText variant="caption" weight="600" color={colors.amber}>
+                      {styleAesthetic || 'Select Style'}
                     </AppText>
                   </View>
                 </View>
@@ -439,6 +536,32 @@ export default function JewelryDesignScreen() {
             {/* Expanded Specifications Controls */}
             {specsExpanded && (
               <View style={styles.expandedSpecsContainer}>
+                {/* Spec 0: Jewelry Type & Category (Ring, Necklace, Earrings, Bracelet, Pendant) */}
+                <View style={styles.specSubCard}>
+                  <View style={styles.specCategoryTitleRow}>
+                    <Icon name="sparkles" size={15} color={colors.emerald} />
+                    <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
+                      JEWELRY TYPE & CATEGORY
+                    </AppText>
+                    {!jewelryType && (
+                      <View style={styles.mandatoryBadge}>
+                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                          * REQUIRED
+                        </AppText>
+                      </View>
+                    )}
+                  </View>
+                  <AppText variant="caption" weight="600" color={colors.textMuted} style={styles.fieldLabel}>
+                    Select the type of jewelry to craft
+                  </AppText>
+                  <ChipGroup
+                    options={JEWELRY_TYPES}
+                    value={jewelryType}
+                    onChange={setJewelryType}
+                    color={colors.emerald}
+                  />
+                </View>
+
                 {/* Spec 1 & 2: Gemstone Type & Carat Weight */}
                 <View style={styles.specSubCard}>
                   <View style={styles.specCategoryTitleRow}>
@@ -446,6 +569,13 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
                       CENTER GEMSTONE
                     </AppText>
+                    {!gemstone && (
+                      <View style={styles.mandatoryBadge}>
+                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                          * REQUIRED
+                        </AppText>
+                      </View>
+                    )}
                   </View>
 
                   {/* Option 1: Gemstone Type */}
@@ -460,9 +590,18 @@ export default function JewelryDesignScreen() {
                   />
 
                   {/* Option 2: Gemstone Carat Weight */}
-                  <AppText variant="caption" weight="600" color={colors.textMuted} style={styles.fieldLabel}>
-                    Carat Weight (ct)
-                  </AppText>
+                  <View style={styles.fieldLabelRow}>
+                    <AppText variant="caption" weight="600" color={colors.textMuted}>
+                      Carat Weight (ct)
+                    </AppText>
+                    {!form.values.carats?.toString().trim() && (
+                      <View style={styles.mandatoryBadge}>
+                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                          * REQUIRED
+                        </AppText>
+                      </View>
+                    )}
+                  </View>
                   <View style={styles.pillsRow}>
                     {CARAT_PRESETS.map((pill) => (
                       <Chip
@@ -494,6 +633,13 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
                       PRECIOUS METAL
                     </AppText>
+                    {!metal && (
+                      <View style={styles.mandatoryBadge}>
+                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                          * REQUIRED
+                        </AppText>
+                      </View>
+                    )}
                   </View>
 
                   {/* Option 3: Metal Type */}
@@ -508,9 +654,18 @@ export default function JewelryDesignScreen() {
                   />
 
                   {/* Option 4: Metal Weight (Grams) */}
-                  <AppText variant="caption" weight="600" color={colors.textMuted} style={styles.fieldLabel}>
-                    Metal Weight (Grams)
-                  </AppText>
+                  <View style={styles.fieldLabelRow}>
+                    <AppText variant="caption" weight="600" color={colors.textMuted}>
+                      Metal Weight (Grams)
+                    </AppText>
+                    {!form.values.metalWeight?.toString().trim() && (
+                      <View style={styles.mandatoryBadge}>
+                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                          * REQUIRED
+                        </AppText>
+                      </View>
+                    )}
+                  </View>
                   <View style={styles.pillsRow}>
                     {METAL_WEIGHT_PRESETS.map((pill) => (
                       <Chip
@@ -542,6 +697,13 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
                       DESIGN AESTHETIC & STYLE
                     </AppText>
+                    {!styleAesthetic && (
+                      <View style={styles.mandatoryBadge}>
+                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
+                          * REQUIRED
+                        </AppText>
+                      </View>
+                    )}
                   </View>
                   <AppText variant="caption" weight="600" color={colors.textMuted} style={styles.fieldLabel}>
                     Select aesthetic style to guide generative jewelry creation
@@ -859,6 +1021,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     marginBottom: 2,
   },
+  fieldLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    marginBottom: 2,
+  },
   pillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1007,5 +1175,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     maxWidth: 280,
+  },
+  mandatoryBadge: {
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radius.xs,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  mandatoryBadgeText: {
+    fontSize: 9,
+    letterSpacing: 0.5,
   },
 });

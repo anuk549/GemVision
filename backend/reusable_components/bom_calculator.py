@@ -115,7 +115,17 @@ def compute_jewelry_bom_and_valuation(
 
     # 3. Verified Wadakuliya artisan labor
     complexity_key = "Complex" if (number_of_accent_stones > 12 or design_complexity == "Complex") else "Simple"
-    labor_cost = round(LABOR_MATRIX.get((category, complexity_key), 4000.0))
+    cat_norm = (category or "Ring").strip().capitalize()
+    if cat_norm in ["Earrings", "Earring"]:
+        cat_key = "Earring"
+    elif cat_norm in ["Necklace", "Necklaces", "Pendant", "Pendants"]:
+        cat_key = "Necklace"
+    elif cat_norm in ["Bracelet", "Bracelets", "Bangle", "Bangles"]:
+        cat_key = "Bracelet"
+    else:
+        cat_key = "Ring"
+
+    labor_cost = round(LABOR_MATRIX.get((cat_key, complexity_key), 4000.0))
 
     # 4. Stone setting & finishing
     setting_cost = round((number_of_accent_stones + 1) * 800.0 + 3500.0)
