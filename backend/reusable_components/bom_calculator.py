@@ -89,6 +89,7 @@ def compute_jewelry_bom_and_valuation(
     design_complexity: str = "Simple",
     metal_spot_rates: Optional[Dict[str, float]] = None,
     team_member_gemstone_price: Optional[float] = None,
+    usd_rate: float = 331.25,
 ) -> Dict[str, Any]:
     """
     Computes itemized BOM and market valuation intervals.
@@ -143,8 +144,9 @@ def compute_jewelry_bom_and_valuation(
     p10 = round(total_cost * 1.06)
     p50 = round(total_cost * 1.22)
     p90 = round(total_cost * 1.42)
-
-    usd_rate = 331.25
+    usd_rate = float(usd_rate or 331.25)
+    if usd_rate <= 0:
+        usd_rate = 331.25
 
     return {
         "bom_breakdown": {

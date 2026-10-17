@@ -39,6 +39,7 @@ import {
   ReceiptCard,
   SavedQuoteCard,
 } from '../components';
+import { getCurrentExchangeRate } from '../services/currencyService';
 
 const PAGE_SIZE = 4;
 
@@ -270,7 +271,7 @@ export default function JewelryDesignScreen() {
     const { spec, result } = outcome.result;
     setGeneratedDesign(result);
 
-    const rateUsd = result?.valuation?.exchange_rate_lkr_usd || 331.25;
+    const rateUsd = result?.valuation?.exchange_rate_lkr_usd || getCurrentExchangeRate();
     const p10Lkr = result?.valuation?.p10_wholesale_floor_lkr || 0;
     const p90Lkr = result?.valuation?.p90_showroom_ceiling_lkr || 0;
     const p10Usd = result?.valuation?.p10_wholesale_floor_usd || Math.round(p10Lkr / rateUsd);

@@ -9,6 +9,7 @@ from .runpod_client import runpod_client
 from .bfl_client import bfl_client
 from .gemini_bridge import gemini_bridge
 from .valuation_engine import valuation_engine
+from .currency_service import currency_service
 try:
     from reusable_components.image_utils import (
         load_gemstone_from_assets,
@@ -285,6 +286,7 @@ class GenerationPipelineCoordinator:
         )
 
         # 4. Dynamic BOM & Quantile Valuation (Incorporating Team Member Gemstone Variables)
+        live_usd_rate = await currency_service.get_live_usd_to_lkr_rate()
         val_result = valuation_engine.evaluate_quotation(
             category=request.category,
             metal=request.metal,
@@ -298,6 +300,7 @@ class GenerationPipelineCoordinator:
             number_of_accent_stones=audited_attributes.number_of_accent_stones,
             design_complexity=audited_attributes.design_complexity,
             team_member_gemstone=request.team_member_gemstone,
+            usd_rate=live_usd_rate,
         )
 
         # Check for non-sapphire calibration notice

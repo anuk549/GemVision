@@ -21,6 +21,7 @@ from ....services.generation_pipeline import generation_pipeline
 from ....services.canvas_stager import canvas_stager
 from ....services.valuation_engine import valuation_engine
 from ....services.gemini_service import gemini_enhancer
+from ....services.currency_service import currency_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -222,4 +223,15 @@ async def enhance_design_prompt(request: EnhancePromptRequest):
         metal_weight_g=request.metal_weight_g or 5.0,
         aesthetic_style=request.aesthetic_style or "Modern",
     )
+
+
+@router.get("/currency-rates")
+async def get_live_currency_rates():
+    """
+    Returns real-time USD/LKR exchange rate fetched from api.exchangerate.fun
+    with automatic in-memory caching and fallback resilience.
+    """
+    await currency_service.get_live_usd_to_lkr_rate()
+    return currency_service.get_latest_payload()
+
 

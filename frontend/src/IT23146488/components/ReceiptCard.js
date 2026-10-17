@@ -2,10 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText, Card, Icon } from '../../components';
 import { colors, radius, spacing } from '../../theme';
+import { useLiveExchangeRate } from '../services/currencyService';
 
 export default function ReceiptCard({ estimate, specs, warningGem }) {
   // Default currency is USD ($) as requested by the user
   const [currency, setCurrency] = useState('USD');
+  const liveCurrency = useLiveExchangeRate();
 
   const bom = estimate?.bom_breakdown || {};
   const val = estimate?.valuation || {};
@@ -26,7 +28,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
   const metalName = specs?.metal || estimate.specs?.metal || '22KT Gold';
   const metalGrams = specs?.metal_weight_g || estimate.specs?.metal_weight_g || '5.0';
 
-  const rateUsd = val?.exchange_rate_lkr_usd || 331.25;
+  const rateUsd = val?.exchange_rate_lkr_usd || liveCurrency.rate || 331.25;
   const isUsd = currency === 'USD';
 
   // Itemized costs in LKR
@@ -119,7 +121,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
         {/* Currency Switcher: USD ($ Default) vs LKR */}
         <View style={styles.currencyToggleWrapper}>
           <AppText variant="caption" weight="800" color={colors.textMuted} style={styles.currencyToggleLabel}>
-            CURRENCY:
+            CURRENCY {liveCurrency.isLive ? '· LIVE FX' : ''}:
           </AppText>
           <View style={styles.currencyTogglePillRow}>
             <Pressable
@@ -272,7 +274,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
               <AppText variant="caption" weight="700" color={colors.text}>
                 {midpointString}
               </AppText>
-              {'  ·  '}1 USD = {rateUsd} LKR
+              {'  ·  '}1 USD = {rateUsd} LKR{liveCurrency.isLive ? ' (Live)' : ''}
             </AppText>
           </View>
         </View>

@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 from ..core.config import settings
 from ..schemas.gemstone import TeamMemberGemstoneInput
 from ..schemas.jewelry import PriceEstimateRequest, ItemizedBOM, QuantileValuation
+from .currency_service import currency_service
 try:
     from reusable_components.bom_calculator import compute_jewelry_bom_and_valuation
 except (ImportError, ValueError):
@@ -67,6 +68,7 @@ class ValuationEngine:
         number_of_accent_stones: int = 0,
         design_complexity: str = "Simple",
         team_member_gemstone: Optional[TeamMemberGemstoneInput] = None,
+        usd_rate: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Calculates BOM and valuation using the real Champion LightGBM (.joblib) model
@@ -91,6 +93,10 @@ class ValuationEngine:
             if team_member_gemstone.gemstone_price is not None:
                 team_gem_price = team_member_gemstone.gemstone_price
 
+        active_usd_rate = float(usd_rate or currency_service.get_cached_rate() or 331.25)
+        if active_usd_rate <= 0:
+            active_usd_rate = 331.25
+
         raw_result = compute_jewelry_bom_and_valuation(
             category=category,
             metal=metal,
@@ -104,6 +110,7 @@ class ValuationEngine:
             number_of_accent_stones=number_of_accent_stones,
             design_complexity=design_complexity,
             team_member_gemstone_price=team_gem_price,
+            usd_rate=active_usd_rate,
         )
 
         bom_dict = raw_result["bom_breakdown"]
@@ -164,7 +171,7 @@ class ValuationEngine:
         if p90 < p50:
             p90 = round(p50 * 1.15)
 
-        usd_rate = 331.25
+        usd_rate = active_usd_rate
         val = QuantileValuation(
             p10_wholesale_floor_lkr=p10,
             p50_fair_market_price_lkr=p50,
