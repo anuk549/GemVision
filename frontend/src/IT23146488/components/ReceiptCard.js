@@ -253,7 +253,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
                 ESTIMATED FAIR VALUE RANGE
               </AppText>
               <AppText variant="caption" color={colors.textMuted}>
-                P10 Wholesale Floor – P90 Showroom Ceiling
+                Wholesale Floor – Showroom Ceiling
               </AppText>
             </View>
           </View>
@@ -264,7 +264,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
 
           <View style={styles.midpointRow}>
             <AppText variant="caption" color={colors.textDim}>
-              Appraised Midpoint (P50):{' '}
+              Appraised Midpoint :{' '}
               <AppText variant="caption" weight="700" color={colors.text}>
                 {midpointString}
               </AppText>
