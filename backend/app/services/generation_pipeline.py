@@ -76,21 +76,52 @@ class GenerationPipelineCoordinator:
         clean_user_p = re.sub(r"\b\d+(\.\d+)?\s*(ct|carats?|carat)\b", scale_cue, user_p, flags=re.IGNORECASE)
         clean_user_p = re.sub(r"\b\d+(\.\d+)?\s*(g|grams?|gram)\b", "fine precious metal", clean_user_p, flags=re.IGNORECASE)
 
+        has_accent_request = bool(re.search(
+            r"\b(accent|accents|side\s*stones?|side\s*diamonds?|halo|pav[eé]|melee|cluster|flanking|three[-\s]stone|surrounding\s*diamonds?|channel[-\s]set\s*diamonds?|shoulder\s*diamonds?)\b",
+            clean_user_p,
+            re.IGNORECASE
+        ))
+
         if "macro" in clean_user_p.lower() and "studio" in clean_user_p.lower():
+            if not has_accent_request:
+                clean_user_p = re.sub(
+                    r"\b(micro-?pav[eé](\s*diamonds?)?|pave\s*diamonds?|halo\s*of\s*diamonds?|accent\s*diamonds?|melee\s*diamonds?|side\s*diamonds?|flanking\s*diamonds?)\b",
+                    "solid polished metal",
+                    clean_user_p,
+                    flags=re.IGNORECASE
+                )
+                if "zero accent stones" not in clean_user_p.lower():
+                    clean_user_p += ", pure solitaire, single centerpiece gemstone only, strictly zero accent stones, no side diamonds, no halo stones, no pave"
             if "no text" not in clean_user_p.lower():
                 clean_user_p += ", no text, no watermark, no typography, no labels, pristine fine jewelry render"
             return clean_user_p
 
         core_vision = clean_user_p
-        if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
+        if has_accent_request:
+            if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
+                core_vision = re.sub(
+                    r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
+                    "featuring multiple intertwining fluid bands encrusted with micro-pavé melee lines",
+                    core_vision,
+                    flags=re.IGNORECASE
+                )
+            elif re.search(r"\bhalo\b", core_vision, re.IGNORECASE) and not re.search(r"micro-pavé halo", core_vision, re.IGNORECASE):
+                core_vision = re.sub(r"\bhalo\b", "delicate micro-pavé brilliant-cut diamond halo", core_vision, flags=re.IGNORECASE)
+        else:
+            # Strictly prohibited: remove any accidental accent words
             core_vision = re.sub(
-                r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
-                "featuring multiple intertwining fluid bands encrusted with micro-pavé melee lines",
+                r"\b(micro-?pav[eé](\s*diamonds?)?|pave\s*diamonds?|halo\s*of\s*diamonds?|accent\s*diamonds?|melee\s*diamonds?|side\s*diamonds?|flanking\s*diamonds?)\b",
+                "polished solid metal",
                 core_vision,
                 flags=re.IGNORECASE
             )
-        elif re.search(r"\bhalo\b", core_vision, re.IGNORECASE) and not re.search(r"micro-pavé halo", core_vision, re.IGNORECASE):
-            core_vision = re.sub(r"\bhalo\b", "delicate micro-pavé brilliant-cut diamond halo", core_vision, flags=re.IGNORECASE)
+            if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
+                core_vision = re.sub(
+                    r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
+                    "featuring multiple intertwining fluid polished solid metal bands",
+                    core_vision,
+                    flags=re.IGNORECASE
+                )
 
         core_vision = core_vision[0].upper() + core_vision[1:] if core_vision else core_vision
 
@@ -125,6 +156,8 @@ class GenerationPipelineCoordinator:
             clauses.append(setting_clause)
         if metal_clause:
             clauses.append(metal_clause)
+        if not has_accent_request:
+            clauses.append("pure solitaire setting, single solitary centerpiece gemstone only, completely smooth solid metal, strictly zero accent stones, absolutely no side stones, no halo stones, no pave diamonds, no melee gems, no secondary stones")
         clauses.extend(studio_tokens)
 
         return ", ".join([c for c in clauses if c])

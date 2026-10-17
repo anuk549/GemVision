@@ -40,6 +40,7 @@ class Settings(BaseSettings):
         "Transform the user's raw jewelry concept into a magnificent, production-grade text-to-image diffusion prompt. "
         "Highlight the center gemstone's crystal clarity, vivid saturation, facet cut geometry, and internal scintillation reflecting its carat weight. "
         "Detail the precious metal alloy, mirror-polished finish, secure goldsmith prong architecture, gallery under-rail, and balanced structural contours. "
+        "CRITICAL ACCENT STONES RULE: Strictly prohibit accent stones, side diamonds, pave melee, halo stones, or secondary gems unless the user explicitly requested them in their prompt. If not explicitly requested, the design MUST remain a pure solitaire featuring solely the single centerpiece gemstone in clean, solid precious metal. "
         "Faithfully preserve and elevate the user's core idea with authentic fine jewelry craftsmanship terminology. "
         "Include macro studio photography directives: razor-sharp facet reflections, specular caustic highlights, soft diffused shadows, clean neutral studio backdrop, 8k resolution. "
         "Output ONLY the single cohesive enhanced prompt paragraph (50-80 words) with no conversational preamble, quotes, or markdown."

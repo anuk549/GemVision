@@ -270,7 +270,15 @@ export default function JewelryDesignScreen() {
     const { spec, result } = outcome.result;
     setGeneratedDesign(result);
 
-    const totalEstimate = result?.valuation?.p50_fair_market_price_lkr || 0;
+    const rateUsd = result?.valuation?.exchange_rate_lkr_usd || 300.0;
+    const p10Lkr = result?.valuation?.p10_wholesale_floor_lkr || 0;
+    const p90Lkr = result?.valuation?.p90_showroom_ceiling_lkr || 0;
+    const p10Usd = result?.valuation?.p10_wholesale_floor_usd || Math.round(p10Lkr / rateUsd);
+    const p90Usd = result?.valuation?.p90_showroom_ceiling_usd || Math.round(p90Lkr / rateUsd);
+
+    const priceRangeUsd = (p10Usd && p90Usd) ? `$${p10Usd.toLocaleString()} – $${p90Usd.toLocaleString()}` : '—';
+    const priceRangeLkr = (p10Lkr && p90Lkr) ? `LKR ${p10Lkr.toLocaleString()} – ${p90Lkr.toLocaleString()}` : '—';
+
     setSavedQuotes((prev) => [
       {
         id: String(Date.now()),
@@ -279,7 +287,10 @@ export default function JewelryDesignScreen() {
         gemstone: `${spec.gemstone} (${spec.gemstone_weight_ct}ct)`,
         metal: `${spec.metal} (${spec.metal_weight_g}g)`,
         style: styleAesthetic,
-        price: totalEstimate ? `LKR ${totalEstimate.toLocaleString()}` : '—',
+        price: priceRangeUsd,
+        priceRange: priceRangeUsd,
+        priceRangeUsd,
+        priceRangeLkr,
         date: 'Just now',
         fullResult: result,
         specs: spec,
@@ -786,6 +797,7 @@ export default function JewelryDesignScreen() {
             <ReceiptCard
               estimate={generatedDesign}
               specs={{
+                category: jewelryType,
                 gemstone,
                 gemstone_weight_ct: form.values.carats,
                 metal,

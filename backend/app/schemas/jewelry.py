@@ -11,12 +11,22 @@ class ItemizedBOM(BaseModel):
     setting_cost_lkr: int = Field(..., description="Stone setting & prong labor")
     accent_cost_lkr: int = Field(..., description="Accent melee stones cost")
     total_manufacturing_cost_lkr: int = Field(..., description="Total manufacturing cost")
+    metal_cost_usd: Optional[int] = Field(None, description="Precious metal cost in USD")
+    gemstone_cost_usd: Optional[int] = Field(None, description="Center gemstone cost in USD")
+    labor_cost_usd: Optional[int] = Field(None, description="Artisan labor in USD")
+    setting_cost_usd: Optional[int] = Field(None, description="Stone setting in USD")
+    accent_cost_usd: Optional[int] = Field(None, description="Accent stones in USD")
+    total_manufacturing_cost_usd: Optional[int] = Field(None, description="Total manufacturing cost in USD")
 
 
 class QuantileValuation(BaseModel):
-    p10_wholesale_floor_lkr: int = Field(..., description="Wholesale liquidation baseline")
-    p50_fair_market_price_lkr: int = Field(..., description="Fair market appraised value")
-    p90_showroom_ceiling_lkr: int = Field(..., description="Boutique showroom retail price")
+    p10_wholesale_floor_lkr: int = Field(..., description="Wholesale liquidation baseline (LKR)")
+    p50_fair_market_price_lkr: int = Field(..., description="Fair market appraised value (LKR)")
+    p90_showroom_ceiling_lkr: int = Field(..., description="Boutique showroom retail price (LKR)")
+    p10_wholesale_floor_usd: Optional[int] = Field(None, description="Wholesale liquidation baseline (USD)")
+    p50_fair_market_price_usd: Optional[int] = Field(None, description="Fair market appraised value (USD)")
+    p90_showroom_ceiling_usd: Optional[int] = Field(None, description="Boutique showroom retail price (USD)")
+    exchange_rate_lkr_usd: float = Field(300.0, description="Exchange rate (LKR per 1 USD)")
 
 
 class AuditedAttributes(BaseModel):

@@ -164,10 +164,15 @@ class ValuationEngine:
         if p90 < p50:
             p90 = round(p50 * 1.15)
 
+        usd_rate = 300.0
         val = QuantileValuation(
             p10_wholesale_floor_lkr=p10,
             p50_fair_market_price_lkr=p50,
             p90_showroom_ceiling_lkr=p90,
+            p10_wholesale_floor_usd=round(p10 / usd_rate),
+            p50_fair_market_price_usd=round(p50 / usd_rate),
+            p90_showroom_ceiling_usd=round(p90 / usd_rate),
+            exchange_rate_lkr_usd=usd_rate,
         )
 
         return {

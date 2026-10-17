@@ -1,14 +1,17 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText, Card, Icon } from '../../components';
 import { colors, radius, spacing } from '../../theme';
 
 export default function ReceiptCard({ estimate, specs, warningGem }) {
+  // Default currency is USD ($) as requested by the user
+  const [currency, setCurrency] = useState('USD');
+
   const bom = estimate?.bom_breakdown || {};
   const val = estimate?.valuation || {};
 
   // Deterministic receipt ID based on design sample and BOM values
-  const receiptId = React.useMemo(() => {
+  const receiptId = useMemo(() => {
     const seed =
       ((estimate?.design_sample || 1) * 7919) ^
       ((bom?.gemstone_cost_lkr || 12345) % 100000);
@@ -23,11 +26,51 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
   const metalName = specs?.metal || estimate.specs?.metal || '22KT Gold';
   const metalGrams = specs?.metal_weight_g || estimate.specs?.metal_weight_g || '5.0';
 
-  const gemCost = bom.gemstone_cost_lkr || 0;
-  const metalCost = bom.metal_cost_lkr || 0;
-  const laborCost = (bom.labor_cost_lkr || 0) + (bom.setting_cost_lkr || 0) + (bom.accent_cost_lkr || 0);
-  const subtotal = bom.total_manufacturing_cost_lkr || (gemCost + metalCost + laborCost);
-  const totalPrice = val.p50_fair_market_price_lkr || subtotal;
+  const rateUsd = val?.exchange_rate_lkr_usd || 300.0;
+  const isUsd = currency === 'USD';
+
+  // Itemized costs in LKR
+  const gemCostLkr = bom?.gemstone_cost_lkr || 0;
+  const metalCostLkr = bom?.metal_cost_lkr || 0;
+  const laborCostLkr =
+    (bom?.labor_cost_lkr || 0) +
+    (bom?.setting_cost_lkr || 0) +
+    (bom?.accent_cost_lkr || 0);
+  const subtotalLkr =
+    bom?.total_manufacturing_cost_lkr ||
+    (gemCostLkr + metalCostLkr + laborCostLkr);
+
+  // Itemized costs in USD
+  const gemCostUsd = bom?.gemstone_cost_usd ?? Math.round(gemCostLkr / rateUsd);
+  const metalCostUsd = bom?.metal_cost_usd ?? Math.round(metalCostLkr / rateUsd);
+  const laborCostUsd =
+    (bom?.labor_cost_usd ?? Math.round((bom?.labor_cost_lkr || 0) / rateUsd)) +
+    (bom?.setting_cost_usd ?? Math.round((bom?.setting_cost_lkr || 0) / rateUsd)) +
+    (bom?.accent_cost_usd ?? Math.round((bom?.accent_cost_lkr || 0) / rateUsd));
+  const subtotalUsd =
+    bom?.total_manufacturing_cost_usd ?? Math.round(subtotalLkr / rateUsd);
+
+  // Quantile valuations
+  const p10Lkr = val?.p10_wholesale_floor_lkr || Math.round(subtotalLkr * 1.06);
+  const p50Lkr = val?.p50_fair_market_price_lkr || Math.round(subtotalLkr * 1.22);
+  const p90Lkr = val?.p90_showroom_ceiling_lkr || Math.round(subtotalLkr * 1.42);
+
+  const p10Usd = val?.p10_wholesale_floor_usd ?? Math.round(p10Lkr / rateUsd);
+  const p50Usd = val?.p50_fair_market_price_usd ?? Math.round(p50Lkr / rateUsd);
+  const p90Usd = val?.p90_showroom_ceiling_usd ?? Math.round(p90Lkr / rateUsd);
+
+  // Formatted amounts based on selected currency
+  const activeGemCost = isUsd ? `$${gemCostUsd.toLocaleString()}` : `LKR ${gemCostLkr.toLocaleString()}`;
+  const activeMetalCost = isUsd ? `$${metalCostUsd.toLocaleString()}` : `LKR ${metalCostLkr.toLocaleString()}`;
+  const activeLaborCost = isUsd ? `$${laborCostUsd.toLocaleString()}` : `LKR ${laborCostLkr.toLocaleString()}`;
+  const activeSubtotal = isUsd ? `$${subtotalUsd.toLocaleString()}` : `LKR ${subtotalLkr.toLocaleString()}`;
+
+  // Price range string (strictly a range, not a single exact value)
+  const priceRangeString = isUsd
+    ? `$${p10Usd.toLocaleString()} – $${p90Usd.toLocaleString()}`
+    : `LKR ${p10Lkr.toLocaleString()} – ${p90Lkr.toLocaleString()}`;
+
+  const midpointString = isUsd ? `$${p50Usd.toLocaleString()}` : `LKR ${p50Lkr.toLocaleString()}`;
 
   const receiptDate = new Date().toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -73,6 +116,47 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
           </View>
         </View>
 
+        {/* Currency Switcher: USD ($ Default) vs LKR */}
+        <View style={styles.currencyToggleWrapper}>
+          <AppText variant="caption" weight="800" color={colors.textMuted} style={styles.currencyToggleLabel}>
+            CURRENCY:
+          </AppText>
+          <View style={styles.currencyTogglePillRow}>
+            <Pressable
+              onPress={() => setCurrency('USD')}
+              style={[
+                styles.currencyToggleBtn,
+                isUsd && styles.currencyToggleBtnActive,
+              ]}
+              hitSlop={6}
+            >
+              <AppText
+                variant="caption"
+                weight="800"
+                color={isUsd ? '#000000' : colors.textMuted}
+              >
+                $ USD (Default)
+              </AppText>
+            </Pressable>
+            <Pressable
+              onPress={() => setCurrency('LKR')}
+              style={[
+                styles.currencyToggleBtn,
+                !isUsd && styles.currencyToggleBtnActive,
+              ]}
+              hitSlop={6}
+            >
+              <AppText
+                variant="caption"
+                weight="800"
+                color={!isUsd ? '#000000' : colors.textMuted}
+              >
+                LKR (Rs)
+              </AppText>
+            </Pressable>
+          </View>
+        </View>
+
         {/* Dashed Perforation Line */}
         <View style={styles.dashedLine} />
 
@@ -97,7 +181,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
             ITEM & DESCRIPTION
           </AppText>
           <AppText variant="caption" weight="700" color={colors.textDim} align="right" style={styles.colAmount}>
-            AMOUNT (LKR)
+            AMOUNT ({isUsd ? 'USD' : 'LKR'})
           </AppText>
         </View>
 
@@ -112,7 +196,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
             </AppText>
           </View>
           <AppText variant="body" weight="700" color={colors.text} align="right">
-            {gemCost ? `LKR ${gemCost.toLocaleString()}` : '—'}
+            {activeGemCost}
           </AppText>
         </View>
 
@@ -127,7 +211,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
             </AppText>
           </View>
           <AppText variant="body" weight="700" color={colors.text} align="right">
-            {metalCost ? `LKR ${metalCost.toLocaleString()}` : '—'}
+            {activeMetalCost}
           </AppText>
         </View>
 
@@ -142,7 +226,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
             </AppText>
           </View>
           <AppText variant="body" weight="700" color={colors.text} align="right">
-            {laborCost ? `LKR ${laborCost.toLocaleString()}` : '—'}
+            {activeLaborCost}
           </AppText>
         </View>
 
@@ -155,23 +239,42 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
             Manufacturing Subtotal:
           </AppText>
           <AppText variant="body" weight="600" color={colors.text}>
-            LKR {subtotal.toLocaleString()}
+            {activeSubtotal}
           </AppText>
         </View>
 
-        {/* Final Price Highlight */}
+        {/* Final Price Highlight: Represented as a RANGE (Not exact single value) */}
         <View style={styles.totalPriceContainer}>
-          <View>
-            <AppText variant="caption" weight="800" color={colors.emerald} style={styles.totalLabel}>
-              ESTIMATED TOTAL PRICE
-            </AppText>
-            <AppText variant="caption" color={colors.textMuted}>
-              Net Estimated Fair Value
+          <View style={styles.totalPriceTopRow}>
+            <View>
+              <AppText variant="caption" weight="800" color={colors.emerald} style={styles.totalLabel}>
+                ESTIMATED FAIR VALUE RANGE
+              </AppText>
+              <AppText variant="caption" color={colors.textMuted}>
+                P10 Wholesale Floor – P90 Showroom Ceiling
+              </AppText>
+            </View>
+            <View style={styles.rangePill}>
+              <Icon name="swap-horizontal" size={13} color={colors.emerald} />
+              <AppText variant="caption" weight="800" color={colors.emerald} style={styles.rangePillText}>
+                SPREAD
+              </AppText>
+            </View>
+          </View>
+
+          <AppText variant="h2" weight="900" color={colors.emerald} style={styles.totalPriceText}>
+            {priceRangeString}
+          </AppText>
+
+          <View style={styles.midpointRow}>
+            <AppText variant="caption" color={colors.textDim}>
+              Appraised Midpoint (P50):{' '}
+              <AppText variant="caption" weight="700" color={colors.text}>
+                {midpointString}
+              </AppText>
+              {'  ·  '}1 USD = {rateUsd} LKR
             </AppText>
           </View>
-          <AppText variant="h2" weight="900" color={colors.emerald} style={styles.totalPriceText}>
-            LKR {totalPrice.toLocaleString()}
-          </AppText>
         </View>
 
         {/* Dashed Line */}
@@ -340,16 +443,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
   },
-  totalPriceContainer: {
+  currencyToggleWrapper: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    marginVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  currencyToggleLabel: {
+    letterSpacing: 1,
+    fontSize: 10,
+  },
+  currencyTogglePillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceAlt,
+    padding: 3,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  currencyToggleBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  currencyToggleBtnActive: {
+    backgroundColor: colors.emerald,
+  },
+  totalPriceContainer: {
     backgroundColor: 'rgba(37, 192, 138, 0.08)',
     padding: spacing.md,
     borderRadius: radius.md,
     marginTop: spacing.sm,
     borderWidth: 1,
     borderColor: 'rgba(37, 192, 138, 0.3)',
+    gap: 6,
+  },
+  totalPriceTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  rangePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(37, 192, 138, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 192, 138, 0.35)',
+  },
+  rangePillText: {
+    fontSize: 10,
+    letterSpacing: 0.8,
   },
   totalLabel: {
     letterSpacing: 1,
@@ -358,6 +513,12 @@ const styles = StyleSheet.create({
   },
   totalPriceText: {
     fontSize: 22,
+    letterSpacing: 0.5,
+  },
+  midpointRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
   },
   barcodeSection: {
     alignItems: 'center',

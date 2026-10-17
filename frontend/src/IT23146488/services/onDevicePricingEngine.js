@@ -114,19 +114,35 @@ export function evaluateOnDeviceValuation(spec) {
     p90 = bom.total_manufacturing_cost_lkr * 1.38;
   }
 
+  const usdRate = 300.0;
   return {
-    bom_breakdown: bom,
+    bom_breakdown: {
+      ...bom,
+      metal_cost_usd: Math.round(bom.metal_cost_lkr / usdRate),
+      gemstone_cost_usd: Math.round(bom.gemstone_cost_lkr / usdRate),
+      labor_cost_usd: Math.round(bom.labor_cost_lkr / usdRate),
+      setting_cost_usd: Math.round(bom.setting_cost_lkr / usdRate),
+      accent_cost_usd: Math.round(bom.accent_cost_lkr / usdRate),
+      total_manufacturing_cost_usd: Math.round(bom.total_manufacturing_cost_lkr / usdRate),
+    },
     valuation: {
       p10_wholesale_floor_lkr: Math.round(p10),
       p50_fair_market_price_lkr: Math.round(p50),
       p90_showroom_ceiling_lkr: Math.round(p90),
+      p10_wholesale_floor_usd: Math.round(p10 / usdRate),
+      p50_fair_market_price_usd: Math.round(p50 / usdRate),
+      p90_showroom_ceiling_usd: Math.round(p90 / usdRate),
+      exchange_rate_lkr_usd: usdRate,
     },
     source: 'on_device_lightgbm',
   };
 }
 
+export const LKR_PER_USD = 300.0;
+
 export default {
   calculateBOM,
   evaluateOnDeviceValuation,
   METAL_RATES,
+  LKR_PER_USD,
 };

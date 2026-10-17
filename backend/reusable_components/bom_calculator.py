@@ -144,6 +144,8 @@ def compute_jewelry_bom_and_valuation(
     p50 = round(total_cost * 1.22)
     p90 = round(total_cost * 1.42)
 
+    usd_rate = 300.0
+
     return {
         "bom_breakdown": {
             "metal_cost_lkr": metal_cost,
@@ -152,11 +154,21 @@ def compute_jewelry_bom_and_valuation(
             "setting_cost_lkr": setting_cost,
             "accent_cost_lkr": accent_cost,
             "total_manufacturing_cost_lkr": total_cost,
+            "metal_cost_usd": round(metal_cost / usd_rate),
+            "gemstone_cost_usd": round(gemstone_cost / usd_rate),
+            "labor_cost_usd": round(labor_cost / usd_rate),
+            "setting_cost_usd": round(setting_cost / usd_rate),
+            "accent_cost_usd": round(accent_cost / usd_rate),
+            "total_manufacturing_cost_usd": round(total_cost / usd_rate),
         },
         "valuation": {
             "p10_wholesale_floor_lkr": p10,
             "p50_fair_market_price_lkr": p50,
             "p90_showroom_ceiling_lkr": p90,
+            "p10_wholesale_floor_usd": round(p10 / usd_rate),
+            "p50_fair_market_price_usd": round(p50 / usd_rate),
+            "p90_showroom_ceiling_usd": round(p90 / usd_rate),
+            "exchange_rate_lkr_usd": usd_rate,
         },
         "pricing_source": "team_member_component" if team_member_gemstone_price else "empirical_sapphire_curve",
     }

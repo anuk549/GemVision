@@ -69,10 +69,10 @@ export default function SavedQuoteCard({ item, onSelect }) {
       <View style={styles.bottomRow}>
         <View style={styles.priceContainer}>
           <AppText variant="caption" weight="700" color={colors.textDim} style={styles.priceLabel}>
-            ESTIMATED RECEIPT TOTAL
+            ESTIMATED VALUE RANGE
           </AppText>
           <AppText variant="subtitle" weight="900" color={colors.emerald} style={styles.priceValue}>
-            {item.price}
+            {item.priceRange || item.price}
           </AppText>
         </View>
 

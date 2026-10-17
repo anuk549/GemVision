@@ -7,6 +7,12 @@ from ..core.config import settings
 logger = logging.getLogger(__name__)
 
 
+def mentions_accent_stones(text: str) -> bool:
+    """Checks whether text explicitly mentions accent stones, side diamonds, halo, or pave."""
+    pattern = r"\b(accent|accents|side\s*stones?|side\s*diamonds?|halo|pav[eé]|melee|cluster|flanking|three[-\s]stone|surrounding\s*diamonds?|channel[-\s]set\s*diamonds?|shoulder\s*diamonds?)\b"
+    return bool(re.search(pattern, text or "", re.IGNORECASE))
+
+
 class GeminiPromptEnhancer:
     """
     Intelligent Fine Jewelry Prompt Enhancer powered by Google Gemini.
@@ -39,15 +45,33 @@ class GeminiPromptEnhancer:
         if not clean_input:
             clean_input = f"A bespoke {aesthetic_style.lower()} fine jewelry ring showcasing a {scale} {c:.2f}ct natural {gemstone}"
 
+        has_accent_request = mentions_accent_stones(clean_input)
+
         # Refine natural language phrases
         core_vision = clean_input
-        if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
+        if has_accent_request:
+            if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
+                core_vision = re.sub(
+                    r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
+                    "featuring multiple intertwining fluid bands encrusted with micro-pavé melee lines",
+                    core_vision,
+                    flags=re.IGNORECASE,
+                )
+        else:
+            # Strictly prohibited from adding accent stones if not mentioned
             core_vision = re.sub(
-                r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
-                "featuring multiple intertwining fluid bands encrusted with micro-pavé melee lines",
+                r"\b(micro-?pav[eé](\s*diamonds?)?|melee\s*diamonds?|accent\s*diamonds?|halo\s*of\s*diamonds?|side\s*diamonds?|flanking\s*diamonds?)\b",
+                "polished solid metal",
                 core_vision,
                 flags=re.IGNORECASE,
             )
+            if re.search(r"multiple lines|lines of|several lines|multi line|multi-line", core_vision, re.IGNORECASE):
+                core_vision = re.sub(
+                    r"with multiple lines of this gem|with multiple lines|multiple lines of this gem|multiple lines",
+                    "featuring multiple intertwining fluid polished solid metal bands",
+                    core_vision,
+                    flags=re.IGNORECASE,
+                )
 
         core_vision = core_vision[0].upper() + core_vision[1:] if core_vision else core_vision
 
@@ -60,14 +84,26 @@ class GeminiPromptEnhancer:
         if not has_metal:
             clauses.append(f"handcrafted in lustrous {metal} ({metal_weight_g}g)")
 
-        style_directives = {
-            "Vintage": "handcrafted vintage filigree detailing and Victorian milgrain flourishes",
-            "Minimal": "understated minimalist silhouette with slender delicate shank and refined low-profile setting",
-            "Modern": "contemporary architectural geometry with bold fluid contours",
-            "Royal Halo": "majestic micro-pave diamond halo accentuating center stone brilliance",
-        }
+        if has_accent_request:
+            style_directives = {
+                "Vintage": "handcrafted vintage filigree detailing and Victorian milgrain flourishes",
+                "Minimal": "understated minimalist silhouette with slender delicate shank and refined low-profile setting",
+                "Modern": "contemporary architectural geometry with bold fluid contours",
+                "Royal Halo": "majestic micro-pave diamond halo accentuating center stone brilliance",
+            }
+        else:
+            style_directives = {
+                "Vintage": "handcrafted vintage filigree detailing and Victorian milgrain flourishes in solid metal, pure solitaire without side gems",
+                "Minimal": "understated minimalist silhouette with slender delicate shank and refined low-profile solitaire setting, zero accent stones",
+                "Modern": "contemporary architectural geometry with bold fluid contours, pure solitaire design with clean unadorned metal",
+                "Royal Halo": "majestic sculpted precious metal architectural framework accentuating center stone brilliance, pure solitaire with zero side gems",
+            }
+
         if aesthetic_style in style_directives:
             clauses.append(style_directives[aesthetic_style])
+
+        if not has_accent_request:
+            clauses.append("pure solitaire setting, single centerpiece gemstone only, perfectly smooth solid metal, strictly zero accent stones, absolutely no side stones, no halo stones, no pave diamonds, no melee gems, no secondary stones")
 
         studio_directives = [
             "master goldsmith micro-prong architecture",
@@ -119,13 +155,21 @@ class GeminiPromptEnhancer:
             if m and m not in candidate_models:
                 candidate_models.append(m)
 
+        has_accent_request = mentions_accent_stones(prompt)
+        accent_policy = (
+            "- Accent Stones: Customer explicitly requested accent/halo stones. Elegantly describe their fine pave/melee setting."
+            if has_accent_request else
+            "- Accent Stones: STRICT PROHIBITION. The customer did NOT request accent stones. You are strictly forbidden from adding accent stones, side diamonds, halo stones, pave diamonds, melee gems, or secondary stones. The design must be a pure solitaire featuring exclusively the single centerpiece gemstone set in solid metal."
+        )
+
         # Prepare prompt for Gemini
         user_message = (
             f"Customer Jewelry Concept: \"{prompt or 'A bespoke luxury ring'}\"\n"
             f"Physical Specifications:\n"
             f"- Center Gemstone: {gemstone} ({gemstone_weight_ct} carats)\n"
             f"- Precious Metal: {metal} ({metal_weight_g} grams)\n"
-            f"- Design Aesthetic Style: {aesthetic_style}\n\n"
+            f"- Design Aesthetic Style: {aesthetic_style}\n"
+            f"{accent_policy}\n\n"
             f"Adhering strictly to your Master Jeweler & AI Art Director role, craft the single enhanced prompt paragraph embodying the {aesthetic_style} fine jewelry aesthetic. "
             f"Describe the gemstone by its qualitative visual majesty (crystal cut, facets, saturation, brilliance) without embedding raw text numbers (like '2.5ct'), labels, or watermarks. Ensure the prompt yields pure clean jewelry with no typography or text rendered."
         )
@@ -176,6 +220,17 @@ class GeminiPromptEnhancer:
                             cleaned = cleaned.strip('"\' \n')
                             # Ensure no raw carat digits which cause typography diffusion on the gem
                             cleaned = re.sub(r"\b\d+(\.\d+)?\s*(ct|carats?|carat)\b", "prominent centerpiece", cleaned, flags=re.IGNORECASE)
+
+                            if not has_accent_request:
+                                # Strip accidental accent stone phrasing hallucinated by LLM
+                                cleaned = re.sub(
+                                    r"\b(micro-?pav[eé](\s*diamonds?)?|pave\s*diamonds?|halo\s*of\s*diamonds?|accent\s*diamonds?|melee\s*diamonds?|side\s*diamonds?|flanking\s*diamonds?)\b",
+                                    "solid polished metal",
+                                    cleaned,
+                                    flags=re.IGNORECASE
+                                )
+                                cleaned += ", pure solitaire, single centerpiece gemstone only, strictly zero accent stones, no side diamonds, no halo stones, no pave"
+
                             if "no text" not in cleaned.lower():
                                 cleaned += ", no text, no watermark, no typography, no labels, pristine fine jewelry render"
                             logger.info(f"Successfully enhanced prompt using Gemini ({model})")
