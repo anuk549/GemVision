@@ -256,12 +256,6 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
                 P10 Wholesale Floor – P90 Showroom Ceiling
               </AppText>
             </View>
-            <View style={styles.rangePill}>
-              <Icon name="swap-horizontal" size={13} color={colors.emerald} />
-              <AppText variant="caption" weight="800" color={colors.emerald} style={styles.rangePillText}>
-                SPREAD
-              </AppText>
-            </View>
           </View>
 
           <AppText variant="h2" weight="900" color={colors.emerald} style={styles.totalPriceText}>
@@ -492,21 +486,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  rangePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(37, 192, 138, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(37, 192, 138, 0.35)',
-  },
-  rangePillText: {
-    fontSize: 10,
-    letterSpacing: 0.8,
   },
   totalLabel: {
     letterSpacing: 1,
