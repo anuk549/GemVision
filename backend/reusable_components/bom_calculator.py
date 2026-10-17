@@ -144,7 +144,7 @@ def compute_jewelry_bom_and_valuation(
     p50 = round(total_cost * 1.22)
     p90 = round(total_cost * 1.42)
 
-    usd_rate = 300.0
+    usd_rate = 331.25
 
     return {
         "bom_breakdown": {

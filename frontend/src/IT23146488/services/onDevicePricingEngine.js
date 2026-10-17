@@ -114,7 +114,7 @@ export function evaluateOnDeviceValuation(spec) {
     p90 = bom.total_manufacturing_cost_lkr * 1.38;
   }
 
-  const usdRate = 300.0;
+  const usdRate = 331.25;
   return {
     bom_breakdown: {
       ...bom,
@@ -138,7 +138,7 @@ export function evaluateOnDeviceValuation(spec) {
   };
 }
 
-export const LKR_PER_USD = 300.0;
+export const LKR_PER_USD = 331.25;
 
 export default {
   calculateBOM,

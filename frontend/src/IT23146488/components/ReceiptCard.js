@@ -26,7 +26,7 @@ export default function ReceiptCard({ estimate, specs, warningGem }) {
   const metalName = specs?.metal || estimate.specs?.metal || '22KT Gold';
   const metalGrams = specs?.metal_weight_g || estimate.specs?.metal_weight_g || '5.0';
 
-  const rateUsd = val?.exchange_rate_lkr_usd || 300.0;
+  const rateUsd = val?.exchange_rate_lkr_usd || 331.25;
   const isUsd = currency === 'USD';
 
   // Itemized costs in LKR

@@ -26,7 +26,7 @@ class QuantileValuation(BaseModel):
     p10_wholesale_floor_usd: Optional[int] = Field(None, description="Wholesale liquidation baseline (USD)")
     p50_fair_market_price_usd: Optional[int] = Field(None, description="Fair market appraised value (USD)")
     p90_showroom_ceiling_usd: Optional[int] = Field(None, description="Boutique showroom retail price (USD)")
-    exchange_rate_lkr_usd: float = Field(300.0, description="Exchange rate (LKR per 1 USD)")
+    exchange_rate_lkr_usd: float = Field(331.25, description="Exchange rate (LKR per 1 USD)")
 
 
 class AuditedAttributes(BaseModel):
