@@ -111,6 +111,7 @@ export default function CuttingScreen() {
     try {
       const data = await recommendPattern(recImage);
       setRecResult(data);
+      setShowRecViz(true);
     } catch (err) {
       setRecError(err);
       setPopup({
@@ -236,7 +237,7 @@ export default function CuttingScreen() {
       />
 
       <Button
-        title="Recommend pattern"
+        title="Generate"
         icon="sparkles-outline"
         loading={recLoading}
         onPress={runRecommendation}
