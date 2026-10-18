@@ -1,0 +1,12 @@
+design,tier,section,angle_deg,indexes,n_indexes,instruction
+Glass Shard Vortex,P1,pavilion,45.0,02-14-18-30-34-46-50-62-66-78-82-94,12,Cut to centerpoint.
+Glass Shard Vortex,G1,pavilion,90.0,96-16-32-48-64-80,6,Set stone size.
+Glass Shard Vortex,P2,pavilion,65.0,96-16-32-48-64-80,6,Level girdle.
+Glass Shard Vortex,P3,pavilion,43.0,15-31-47-63-79-95,6,"Meet P1, P2"
+Glass Shard Vortex,P4,pavilion,41.34,02-18-34-50-66-82,6,"Meet P1, P3"
+Glass Shard Vortex,C1,crown,45.0,96-16-32-48-64-80,6,Set girdle width.
+Glass Shard Vortex,C2,crown,33.78,01-17-33-49-65-81,6,"Meet G1, C1"
+Glass Shard Vortex,C3,crown,26.76,02-18-34-50-66-82,6,"Meet C1, C2"
+Glass Shard Vortex,C4,crown,22.1,03-19-35-51-67-83,6,"Meet C2, C3"
+Glass Shard Vortex,C5,crown,18.83,04-20-36-52-68-84,6,"Meet C3, C4"
+Glass Shard Vortex,T,crown,0.0,,0,"Table. Meet C4, C54 (printed as C54 on the sheet, probably C5)"

@@ -1,0 +1,2 @@
+name,designer,date,ri,index_gear,symmetry_fold,facet_count,L_W,T_W,U_W,P_W,C_W,Vol_W3,size_min_mm,size_max_mm,ri_min,ri_max,n_tiers,n_pavilion_tiers,n_crown_tiers,min_angle,max_angle,notes,source_file
+Glass Shard Vortex,Arya Akhavan,2012-11,1.76,96,6,67,1.155,0.349,0.349,0.497,0.192,0.267,6,12,1.52,2.62,11,5,6,0.0,90.0,"Swirling vortex of glass shards reflection pattern. Designer prefers leucosapphire, but can be cut in materials from feldspar to rutile (RI 1.52-2.62) with no changes.",glass_shard_vortex.json
