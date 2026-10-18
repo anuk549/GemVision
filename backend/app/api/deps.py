@@ -8,6 +8,7 @@ from fastapi import Depends, Request
 
 from app.core.config import Settings
 from app.services.defect_detector import DefectDetector
+from app.services.gem_pattern import GemPatternRecommender
 from app.services.model_registry import ModelRegistry
 
 
@@ -23,6 +24,11 @@ def get_detector(request: Request) -> DefectDetector:
     return request.app.state.detector
 
 
+def get_gem_recommender(request: Request) -> GemPatternRecommender:
+    return request.app.state.gem_recommender
+
+
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 RegistryDep = Annotated[ModelRegistry, Depends(get_registry)]
 DetectorDep = Annotated[DefectDetector, Depends(get_detector)]
+GemRecommenderDep = Annotated[GemPatternRecommender, Depends(get_gem_recommender)]

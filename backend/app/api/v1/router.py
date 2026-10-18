@@ -2,8 +2,9 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import defects, health
+from app.api.v1.endpoints import defects, gem, health
 
 router = APIRouter()
 router.include_router(health.router)
 router.include_router(defects.router)
+router.include_router(gem.router)

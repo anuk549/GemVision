@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def app_no_models(tmp_path) -> FastAPI:
     """App whose model directory is empty (starts in degraded mode)."""
-    return create_app(Settings(model_dir=tmp_path))
+    return create_app(Settings(model_dir=tmp_path, gem_model_dir=tmp_path))
 
 
 @pytest.fixture

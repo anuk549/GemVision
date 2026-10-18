@@ -11,12 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.deps import RegistryDep, SettingsDep
+from app.api.v1.endpoints import gem as gem_endpoints
 from app.api.v1.router import router as v1_router
 from app.core.config import Settings, get_settings
 from app.core.exceptions import GemVisionError
 from app.core.logging import configure_logging
 from app.schemas.common import ErrorDetail, ErrorResponse
 from app.services.defect_detector import DefectDetector
+from app.services.gem_pattern import GemPatternRecommender
 from app.services.model_registry import MODEL_SPECS, ModelRegistry
 
 logger = logging.getLogger("gemvision")
@@ -37,6 +39,8 @@ def _lifespan(settings: Settings):
         app.state.settings = settings
         app.state.registry = registry
         app.state.detector = DefectDetector(registry)
+        app.state.gem_recommender = GemPatternRecommender(settings)
+        app.state.gem_recommender.load()
 
         logger.info("Loaded %d/%d model(s)", registry.loaded_count, len(MODEL_SPECS))
         yield
@@ -82,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     _register_exception_handlers(app)
     app.include_router(v1_router, prefix=settings.api_prefix)
+    app.include_router(gem_endpoints.router, prefix="/api")
 
     @app.get("/", tags=["root"], summary="Service metadata")
     def root(registry: RegistryDep, settings: SettingsDep) -> dict[str, object]:

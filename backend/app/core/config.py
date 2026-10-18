@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     image_size: tuple[int, int] = (224, 224)
     max_upload_mb: int = 10
 
+    gem_model_dir: Path = Field(default_factory=lambda: BACKEND_DIR / "models")
+    pattern_config_path: Path = Field(
+        default_factory=lambda: BACKEND_DIR / "config" / "patterns.json"
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _parse_cors_origins(cls, value: object) -> object:
@@ -61,6 +66,14 @@ class Settings(BaseSettings):
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
+
+    @property
+    def gem_model_path(self) -> Path:
+        return self.gem_model_dir / "gem_pattern_model.keras"
+
+    @property
+    def gem_labels_path(self) -> Path:
+        return self.gem_model_dir / "labels.json"
 
 
 @lru_cache

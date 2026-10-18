@@ -41,3 +41,8 @@ class ImageTooLargeError(GemVisionError):
 class UnsupportedMediaTypeError(GemVisionError):
     status_code = 415
     error_type = "unsupported_media_type"
+
+
+class PatternNotFoundError(GemVisionError):
+    status_code = 404
+    error_type = "pattern_not_found"

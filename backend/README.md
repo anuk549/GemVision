@@ -233,3 +233,76 @@ make lint        # or: ruff check .
 
 The suite runs without the model artifacts: it covers the API surface, the
 error envelope, request validation, and the shared `reusable_components`.
+
+## Gem cutting pattern recommendation
+
+The service also recommends a cutting pattern from a gem photo and renders a 2D
+cut-gem visualization.
+
+### Model files
+
+In addition to the defect models, the API expects:
+
+```
+backend/models/gem_pattern_model.keras   # MobileNetV2 gem type/state classifier
+backend/models/labels.json               # class names + image size
+backend/config/patterns.json             # cutting pattern definitions
+```
+
+Generate the model with the notebook:
+
+```bash
+jupyter nbconvert --to notebook --execute --inplace notebooks/gem_pattern_model.ipynb
+```
+
+Override locations with `GEMVISION_GEM_MODEL_DIR` and `GEMVISION_PATTERN_CONFIG_PATH`.
+
+### Additional endpoints
+
+Base path: `/api/v1` (also available under `/api` for the gem routes).
+
+| Method | Path                                   | Description                              |
+|--------|----------------------------------------|------------------------------------------|
+| POST   | `/gem/recommend-pattern`               | Recommend a cutting pattern for an image |
+| GET    | `/gem/pattern/{pattern_id}/render`     | Render a 2D PNG visualization            |
+
+Example:
+
+```bash
+curl -X POST http://localhost:8000/api/gem/recommend-pattern \
+  -F "file=@sample.jpg"
+```
+
+Response:
+
+```json
+{
+  "gem_type": "sapphire",
+  "state": "rough",
+  "confidence": 0.91,
+  "recommended_pattern": {
+    "id": "glass-shard-vortex",
+    "name": "Glass Shard Vortex",
+    "designer": "Arya Akhavan",
+    "facets": 67,
+    "index": 96,
+    "angles": {"crown": 34.0, "pavilion": 40.5, "table": 58.0}
+  }
+}
+```
+
+Render example:
+
+```bash
+curl -o pattern.png http://localhost:8000/api/gem/pattern/glass-shard-vortex/render
+```
+
+### Datasets
+
+See [`../dataset/README.md`](../dataset/README.md) for collection, labeling and
+splitting instructions. Synthetic data can be generated with:
+
+```bash
+python scripts/generate_synthetic_dataset.py --count 16
+python scripts/split_dataset.py
+```

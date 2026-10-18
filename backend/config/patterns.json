@@ -1,0 +1,18 @@
+{
+  "patterns": [
+    {
+      "id": "glass-shard-vortex",
+      "name": "Glass Shard Vortex",
+      "designer": "Arya Akhavan",
+      "facets": 67,
+      "index": 96,
+      "symmetry": 6,
+      "ri": 1.760,
+      "angles": {
+        "crown": 34.0,
+        "pavilion": 40.5,
+        "table": 58.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "class_names": [
+    "amethyst_cut",
+    "amethyst_rough",
+    "emerald_cut",
+    "emerald_rough",
+    "ruby_cut",
+    "ruby_rough",
+    "sapphire_cut",
+    "sapphire_rough"
+  ],
+  "image_size": [
+    224,
+    224
+  ],
+  "backbone": "MobileNetV2",
+  "recommended_pattern": "glass-shard-vortex"
+}
