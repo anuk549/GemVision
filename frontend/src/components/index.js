@@ -18,3 +18,4 @@ export { default as Badge } from './Badge';
 export { default as DetectionResult } from './DetectionResult';
 export { default as LoadingBar, Spinner, LoadingOverlay, InlineStatus } from './LoadingBar';
 export { colors, gradients, fontSizes, fontWeights, textVariants, spacing, radius, shadow } from '../theme';
+export { default as Gem3DView } from './Gem3DView';

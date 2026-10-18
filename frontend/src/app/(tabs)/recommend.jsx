@@ -10,6 +10,7 @@ import {
   Popup,
   Screen,
   UploadCard,
+  Gem3DView,
 } from '../../components';
 import { recommendPattern, getPatternRenderUrl } from '../../services/gemService';
 import { colors, radius, spacing } from '../../theme';
@@ -127,13 +128,15 @@ export default function GemRecommendationScreen() {
         </Card>
       ) : null}
 
-      {/* Future 3D view placeholder (not implemented). */}
-      <Card style={styles.placeholderCard}>
-        <AppText variant="label" color={colors.textMuted}>
-          3D view placeholder
+      <Card style={styles.visualizationCard}>
+        <AppText variant="title" style={styles.visualizationTitle}>
+          3D cut-gem view
         </AppText>
-        <AppText variant="caption" color={colors.textDim}>
-          Interactive 3D cut-gem visualization will be added here in a future release.
+        <View style={styles.webviewWrap}>
+          <Gem3DView style={styles.webview} />
+        </View>
+        <AppText variant="caption" color={colors.textMuted} align="center">
+          Interactive 3D visualization of the cut gem.
         </AppText>
       </Card>
 
@@ -187,8 +190,15 @@ const styles = StyleSheet.create({
     height: 260,
     borderRadius: radius.lg,
   },
-  placeholderCard: {
-    borderStyle: 'dashed',
-    gap: spacing.xs,
+  webviewWrap: {
+    width: '100%',
+    height: 260,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
 });
