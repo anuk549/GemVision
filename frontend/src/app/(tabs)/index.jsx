@@ -35,6 +35,13 @@ const WORKSPACES = [
     color: colors.topaz,
   },
   {
+    route: '/recommend',
+    title: 'Gem Cutting Recommendation',
+    subtitle: 'Recommend a cutting pattern',
+    icon: 'diamond-outline',
+    color: colors.sapphire,
+  },
+  {
     route: '/design',
     title: 'Jewelry Design',
     subtitle: 'Create a jewelry piece',
@@ -120,7 +127,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <AppText variant="title">Tools</AppText>
           <AppText variant="caption" color={colors.textDim}>
-            4 features
+            5 features
           </AppText>
         </View>
 

@@ -8,3 +8,4 @@ export {
   imageMimeType,
   toUploadPart,
 } from './detectService';
+export { recommendPattern, getPatternRenderUrl } from './gemService';

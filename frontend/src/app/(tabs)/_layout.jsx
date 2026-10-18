@@ -46,6 +46,10 @@ export default function TabsLayout() {
         options={{ title: 'Cutting', tabBarIcon: tabIcon('cut', 'cut-outline') }}
       />
       <Tabs.Screen
+        name="recommend"
+        options={{ title: 'Recommend', tabBarIcon: tabIcon('diamond', 'diamond-outline') }}
+      />
+      <Tabs.Screen
         name="design"
         options={{ title: 'Design', tabBarIcon: tabIcon('color-palette', 'color-palette-outline') }}
       />
