@@ -30,16 +30,9 @@ const WORKSPACES = [
   {
     route: '/cutting',
     title: 'Gem Cutting',
-    subtitle: 'Plan a cut & estimate yield',
+    subtitle: 'Plan a cut, yield & pattern',
     icon: 'cut-outline',
     color: colors.topaz,
-  },
-  {
-    route: '/recommend',
-    title: 'Gem Cutting Recommendation',
-    subtitle: 'Recommend a cutting pattern',
-    icon: 'diamond-outline',
-    color: colors.sapphire,
   },
   {
     route: '/design',
