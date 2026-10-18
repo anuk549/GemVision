@@ -252,7 +252,7 @@ backend/config/patterns.json             # cutting pattern definitions
 Generate the model with the notebook:
 
 ```bash
-jupyter nbconvert --to notebook --execute --inplace notebooks/gem_pattern_model.ipynb
+jupyter nbconvert --to notebook --execute --inplace ml/gem-pattern-recommendation/notebooks/gem_pattern_model.ipynb
 ```
 
 Override locations with `GEMVISION_GEM_MODEL_DIR` and `GEMVISION_PATTERN_CONFIG_PATH`.
@@ -299,10 +299,10 @@ curl -o pattern.png http://localhost:8000/api/gem/pattern/glass-shard-vortex/ren
 
 ### Datasets
 
-See [`../dataset/README.md`](../dataset/README.md) for collection, labeling and
+See [`../ml/gem-pattern-recommendation/dataset/README.md`](../ml/gem-pattern-recommendation/dataset/README.md) for collection, labeling and
 splitting instructions. Synthetic data can be generated with:
 
 ```bash
-python scripts/generate_synthetic_dataset.py --count 16
-python scripts/split_dataset.py
+python ml/gem-pattern-recommendation/scripts/generate_synthetic_dataset.py --count 16
+python ml/gem-pattern-recommendation/scripts/split_dataset.py
 ```
