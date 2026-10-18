@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 const HTML = `
@@ -70,6 +70,15 @@ const HTML = `
 `;
 
 export default function Gem3DView({ style }) {
+  if (Platform.OS === 'web') {
+    return (
+      <iframe
+        title="gem-3d"
+        srcDoc={HTML}
+        style={{ border: '0', width: '100%', height: '100%', ...style }}
+      />
+    );
+  }
   return <WebView source={{ html: HTML }} style={[styles.webview, style]} />;
 }
 
