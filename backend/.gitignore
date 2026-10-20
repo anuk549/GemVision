@@ -17,6 +17,7 @@ ENV/
 
 # Uploads / temp
 uploads/
+assets/gem_inputs/
 tmp/
 *.tmp
 

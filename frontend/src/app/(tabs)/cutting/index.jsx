@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import {
   AppText,
   Button,
@@ -30,6 +31,7 @@ const SHAPES = [
 const PRICE_PER_CARAT = 450;
 
 export default function CuttingScreen() {
+  const params = useLocalSearchParams();
   const [shape, setShape] = useState('Round');
   const [result, setResult] = useState(null);
   const [plans, setPlans] = useState([]);
@@ -92,6 +94,14 @@ export default function CuttingScreen() {
 
   return (
     <Screen title="Gem Cutting" subtitle="Plan a cut and estimate polished yield.">
+      {params?.gemName ? (
+        <View style={styles.handoffBanner}>
+          <Icon name="sparkles" size={16} color={colors.accent} />
+          <AppText variant="caption" weight="700" color={colors.text}>
+            Identified: {params.gemName} {params.confidence ? `(${Number(params.confidence).toFixed(1)}% match)` : ''}
+          </AppText>
+        </View>
+      ) : null}
       <Card>
         <AppText variant="label" color={colors.textMuted} style={styles.fieldLabel}>
           Cut shape
@@ -224,5 +234,17 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginTop: spacing.sm,
+  },
+  handoffBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: `${colors.accent}40`,
+    marginBottom: spacing.sm,
   },
 });

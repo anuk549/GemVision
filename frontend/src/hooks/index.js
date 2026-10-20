@@ -35,3 +35,4 @@ export function useAsync(asyncFn, { onSuccess, onError } = {}) {
 
 export { default as useForm } from './useForm';
 export { default as useDetection } from './useDetection';
+export { default as useGemIdentification } from './useGemIdentification';
