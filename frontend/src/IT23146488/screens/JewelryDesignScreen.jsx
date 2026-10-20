@@ -72,8 +72,8 @@ export default function JewelryDesignScreen() {
   }, [prompt]);
 
   // Distinct image uploads: Loose Gemstone Photo and Concept Sketch
-  const [gemImage, setGemImage] = useState(null);
-  const [sketchImage, setSketchImage] = useState(null);
+  // const [gemImage, setGemImage] = useState(null);
+  // const [sketchImage, setSketchImage] = useState(null);
 
   // Generation & valuation states
   const [generating, setGenerating] = useState(false);
@@ -240,12 +240,12 @@ export default function JewelryDesignScreen() {
         sample_index: nextSample,
       };
 
-      try {
-        const result = await generateDesignAndQuote(spec, gemImage, sketchImage);
-        return { spec, result };
-      } finally {
-        setProgress(1.0);
-      }
+      // try {
+      //   const result = await generateDesignAndQuote(spec, gemImage, sketchImage);
+      //   return { spec, result };
+      // } finally {
+      //   setProgress(1.0);
+      // }
     });
 
     clearTimeout(stepTimer1);
@@ -360,7 +360,7 @@ export default function JewelryDesignScreen() {
           </AppText>
 
           {/* SECTION 1: VISUAL UPLOADS (GEM IMAGE & SKETCH) */}
-          <View style={styles.sectionContainer}>
+          {/* <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
               <Icon name="images-outline" size={17} color={colors.emerald} />
               <AppText variant="label" weight="800" color={colors.emerald} style={styles.sectionLabel}>
@@ -370,7 +370,7 @@ export default function JewelryDesignScreen() {
 
             <View style={styles.uploadRow}>
               {/* Gemstone Image Upload */}
-              <View style={styles.uploadColumn}>
+              {/* <View style={styles.uploadColumn}>
                 <CompactUploadCard
                   value={gemImage}
                   onChange={setGemImage}
@@ -379,10 +379,10 @@ export default function JewelryDesignScreen() {
                   icon="diamond-outline"
                   height={154}
                 />
-              </View>
+              </View> */}
 
               {/* Jewelry Sketch Upload */}
-              <View style={styles.uploadColumn}>
+              {/* <View style={styles.uploadColumn}>
                 <CompactUploadCard
                   value={sketchImage}
                   onChange={setSketchImage}
@@ -393,7 +393,7 @@ export default function JewelryDesignScreen() {
                 />
               </View>
             </View>
-          </View>
+          </View> */} 
 
           {/* SECTION 2: USER PROMPT */}
           <View style={styles.sectionContainer}>
@@ -401,7 +401,7 @@ export default function JewelryDesignScreen() {
               <View style={styles.sectionHeader}>
                 <Icon name="chatbubble-ellipses-outline" size={17} color={colors.emerald} />
                 <AppText variant="label" weight="800" color={colors.emerald} style={styles.sectionLabel}>
-                  2. DESIGN PROMPT
+                  1 DESIGN PROMPT
                 </AppText>
                 {!prompt?.trim() && (
                   <View style={styles.mandatoryBadge}>
@@ -487,7 +487,7 @@ export default function JewelryDesignScreen() {
               <View style={styles.sectionHeader}>
                 <Icon name="options-outline" size={17} color={colors.emerald} />
                 <AppText variant="label" weight="800" color={colors.emerald} style={styles.sectionLabel}>
-                  3. SPECIFICATIONS
+                  2. SPECIFICATIONS
                 </AppText>
                 {(!jewelryType || !gemstone || !form.values.carats?.toString().trim() || !metal || !form.values.metalWeight?.toString().trim() || !styleAesthetic) && (
                   <View style={styles.mandatoryBadge}>

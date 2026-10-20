@@ -63,6 +63,5 @@ export const JEWELRY_TYPES = [
   { label: 'Ring', value: 'Ring', icon: 'ellipse-outline' },
   { label: 'Necklace', value: 'Necklace', icon: 'infinite-outline' },
   { label: 'Earrings', value: 'Earrings', icon: 'sparkles-outline' },
-  { label: 'Bracelet', value: 'Bracelet', icon: 'radio-button-off-outline' },
 ];
 
