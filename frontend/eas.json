@@ -8,7 +8,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://complement-partner-wav-harvey.trycloudflare.com"
+        "EXPO_PUBLIC_API_URL": "https://confirmed-attempts-scanner-amendment.trycloudflare.com"
       }
     }
   }
