@@ -19,8 +19,10 @@ export default function Screen({
   scrollRef,
   keyboardOffset = 0,
 }) {
-  const content = (
+  const content = scroll ? (
     <View style={[padded && styles.padded, contentContainerStyle]}>{children}</View>
+  ) : (
+    <View style={[styles.unscrollable, padded && styles.padded, contentContainerStyle]}>{children}</View>
   );
 
   return (
@@ -44,21 +46,34 @@ export default function Screen({
         ) : null}
 
         {scroll ? (
-          <KeyboardAvoidingView
-            style={styles.keyboardAvoid}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={keyboardOffset}
-          >
+          Platform.OS === 'web' ? (
             <ScrollView
               ref={scrollRef}
+              style={styles.scroll}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              automaticallyAdjustKeyboardInsets={true}
+              showsVerticalScrollIndicator={true}
             >
               {content}
             </ScrollView>
-          </KeyboardAvoidingView>
+          ) : (
+            <KeyboardAvoidingView
+              style={styles.keyboardAvoid}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              keyboardVerticalOffset={keyboardOffset}
+            >
+              <ScrollView
+                ref={scrollRef}
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                {content}
+              </ScrollView>
+            </KeyboardAvoidingView>
+          )
         ) : (
           content
         )}
@@ -71,12 +86,22 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
+    ...(Platform.OS === 'web' ? { height: '100vh', maxHeight: '100vh', overflow: 'hidden' } : {}),
   },
   keyboardAvoid: {
     flex: 1,
   },
   safe: {
     flex: 1,
+    ...(Platform.OS === 'web' ? { height: '100%', minHeight: 0 } : {}),
+  },
+  scroll: {
+    flex: 1,
+    ...(Platform.OS === 'web' ? { minHeight: 0 } : {}),
+  },
+  unscrollable: {
+    flex: 1,
+    ...(Platform.OS === 'web' ? { minHeight: 0, height: '100%' } : {}),
   },
   headerTop: {
     paddingHorizontal: spacing.lg,

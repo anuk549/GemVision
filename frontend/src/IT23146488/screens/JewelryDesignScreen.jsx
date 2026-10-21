@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -432,13 +433,15 @@ export default function JewelryDesignScreen() {
       titleColor={colors.emerald}
       headerTop={brandHeader}
       scroll={false}
+      padded={false}
     >
       <ScrollView
         ref={scrollViewRef}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        style={styles.webAwareScroll}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets={true}
+        automaticallyAdjustKeyboardInsets={Platform.OS !== 'web'}
       >
         {/* Simple & Clear Main Studio Card */}
         <Card style={styles.mainCard}>
@@ -533,9 +536,11 @@ export default function JewelryDesignScreen() {
               placeholder="Describe your design vision (e.g. A delicate solitaire ring with intertwined botanical vines holding the gemstone securely)..."
               value={prompt}
               onFocus={() => {
-                setTimeout(() => {
-                  scrollViewRef.current?.scrollTo({ y: 150, animated: true });
-                }, 100);
+                if (Platform.OS !== 'web') {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollTo({ y: 150, animated: true });
+                  }, 100);
+                }
               }}
               onChangeText={handlePromptChange}
               style={styles.promptInputWrapper}
@@ -1032,8 +1037,15 @@ export default function JewelryDesignScreen() {
 }
 
 const styles = StyleSheet.create({
+  webAwareScroll: {
+    flex: 1,
+    width: '100%',
+    ...(Platform.OS === 'web' ? { height: '100%', minHeight: 0, overflowY: 'auto' } : {}),
+  },
   scrollContent: {
-    paddingBottom: spacing.xxl * 2,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl * 3,
+    gap: spacing.lg,
   },
   brandRow: {
     flexDirection: 'row',
