@@ -22,6 +22,8 @@ export default function Input({
   editable = true,
   style,
   inputStyle,
+  onFocus,
+  onBlur,
   ...rest
 }) {
   const [focused, setFocused] = useState(false);
@@ -62,8 +64,14 @@ export default function Input({
           secureTextEntry={hidden}
           multiline={multiline}
           editable={editable}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
           style={[styles.input, multiline && styles.multilineInput, inputStyle]}
           {...rest}
         />

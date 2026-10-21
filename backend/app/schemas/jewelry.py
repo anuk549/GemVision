@@ -37,22 +37,22 @@ class AuditedAttributes(BaseModel):
 
 
 class JewelryDesignRequest(BaseModel):
-    # Generative prompt & aesthetics - MANDATORY (No default fallback)
-    prompt: str = Field(..., min_length=3, description="Creative vision prompt entered by user")
-    aesthetic_style: AestheticStyleEnum = Field(..., description="Aesthetic style selected by user")
+    # Generative prompt & aesthetics (Optional if options are selected)
+    prompt: Optional[str] = Field(None, description="Creative vision prompt entered by user")
+    aesthetic_style: Optional[AestheticStyleEnum] = Field(AestheticStyleEnum.MODERN, description="Aesthetic style selected by user")
     pipeline_option: Optional[PipelineOptionEnum] = Field(PipelineOptionEnum.HYBRID, description="Pipeline architecture")
 
-    # Jewelry structure - MANDATORY (No default fallback)
-    category: str = Field(..., min_length=2, description="Ring, Necklace, Earrings, Bracelet, Pendant")
-    metal: str = Field(..., min_length=2, description="Precious metal alloy")
+    # Jewelry structure (Sensible defaults if prompt provided)
+    category: Optional[str] = Field("Ring", description="Ring, Necklace, Earrings, Bracelet, Pendant")
+    metal: Optional[str] = Field("22KT Gold", description="Precious metal alloy")
     metal_weight_g: float = Field(..., ge=0.5, description="Metal mass in grams")
     setting_type: str = Field("Prong", description="Prong, Bezel, Halo, Pave, Channel")
     number_of_accent_stones: int = Field(0, description="Count of melee accent stones")
 
-    # Loose gemstone variables - MANDATORY (No default fallback)
-    gemstone: str = Field(..., min_length=2, description="Center gemstone species/type")
+    # Loose gemstone variables
+    gemstone: Optional[str] = Field("Blue Sapphire", description="Center gemstone species/type")
     gemstone_weight_ct: float = Field(..., ge=0.1, description="Weight in carats")
-    color_grade: Optional[str] = Field("Royal Blue", description="Color grade")
+    color_grade: Optional[str] = Field(None, description="Color grade")
     stone_grade: Optional[str] = Field("AA (Fine Jewelry)", description="Quality grade")
     treatment: Optional[str] = Field("Heated", description="Treatment")
 
@@ -73,7 +73,7 @@ class PriceEstimateRequest(BaseModel):
     gemstone: str = "Blue Sapphire"
     gemstone_weight_ct: float = 2.5
     setting_type: str = "Prong"
-    color_grade: str = "Royal Blue"
+    color_grade: Optional[str] = None
     stone_grade: str = "AA (Fine Jewelry)"
     treatment: str = "Heated"
     number_of_accent_stones: int = 0
@@ -100,6 +100,7 @@ class JewelryDesignResponse(BaseModel):
 
 class EnhancePromptRequest(BaseModel):
     prompt: str = Field(..., description="User original prompt or concept")
+    category: Optional[str] = Field("Ring", description="Jewelry category (e.g. Ring, Earrings, Necklace)")
     gemstone: Optional[str] = Field("Blue Sapphire", description="Center gemstone type")
     gemstone_weight_ct: Optional[float] = Field(2.5, description="Gemstone carat weight")
     metal: Optional[str] = Field("22KT Gold", description="Precious metal alloy")

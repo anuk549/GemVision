@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, gradients, spacing } from '../theme';
@@ -16,6 +16,8 @@ export default function Screen({
   padded = true,
   style,
   contentContainerStyle,
+  scrollRef,
+  keyboardOffset = 0,
 }) {
   const content = (
     <View style={[padded && styles.padded, contentContainerStyle]}>{children}</View>
@@ -42,13 +44,21 @@ export default function Screen({
         ) : null}
 
         {scroll ? (
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoid}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={keyboardOffset}
           >
-            {content}
-          </ScrollView>
+            <ScrollView
+              ref={scrollRef}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              automaticallyAdjustKeyboardInsets={true}
+            >
+              {content}
+            </ScrollView>
+          </KeyboardAvoidingView>
         ) : (
           content
         )}
@@ -61,6 +71,9 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   safe: {
     flex: 1,

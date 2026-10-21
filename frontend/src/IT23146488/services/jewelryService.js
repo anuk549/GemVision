@@ -1,7 +1,25 @@
 import { API_PREFIX, PREDICT_TIMEOUT_MS } from '../../config/api';
 import { apiClient } from '../../services/client';
+import { parsePromptSpecifications } from '../utils/promptParser';
+
+/**
+ * Dynamically resolves appropriate gemological color grade:
+ * 1. Explicit user selection (specs.color_grade)
+ * 2. Natural language cues parsed from prompt (e.g. "canary yellow", "royal blue")
+ * 3. Selected gemstone species mapping (Yellow Sapphire -> Vivid Yellow, Blue Sapphire -> Royal Blue)
+ */
+export const resolveColorGrade = (specs = {}) => {
+  if (specs.color_grade) return specs.color_grade;
+  const fromPrompt = parsePromptSpecifications(specs.prompt || '').colorGrade;
+  if (fromPrompt) return fromPrompt;
+  const gem = (specs.gemstone || '').toLowerCase();
+  if (gem.includes('yellow')) return 'Vivid Yellow';
+  if (gem.includes('blue')) return 'Royal Blue';
+  return 'Royal Blue';
+};
 
 export const calculatePricing = async (specs) => {
+  const colorGrade = resolveColorGrade(specs);
   const payload = {
     category: specs.category || 'Ring',
     metal: specs.metal || '22KT Gold',
@@ -9,7 +27,7 @@ export const calculatePricing = async (specs) => {
     gemstone: specs.gemstone || 'Blue Sapphire',
     gemstone_weight_ct: Number(specs.gemstone_weight_ct || 2.5),
     setting_type: specs.setting_type || 'Prong',
-    color_grade: specs.color_grade || 'Royal Blue',
+    color_grade: colorGrade,
     stone_grade: specs.stone_grade || 'AA (Fine Jewelry)',
     treatment: specs.treatment || 'Heated',
     number_of_accent_stones: Number(specs.number_of_accent_stones || 0),
@@ -66,6 +84,7 @@ export const enhancePrompt = async ({
 
 export const buildClientEnhancedPrompt = ({
   prompt = '',
+  category = 'Ring',
   gemstone = 'Blue Sapphire',
   carats = '2.50',
   metal = '22KT Gold',
@@ -74,7 +93,7 @@ export const buildClientEnhancedPrompt = ({
 }) => {
   const c = Number(carats) || 2.5;
   const scale = c >= 3.5 ? 'commanding centerpiece' : c >= 1.8 ? 'prominent centerpiece' : 'delicate centerpiece';
-  const cleanInput = (prompt || '').trim() || `A bespoke ${style.toLowerCase()} luxury ring showcasing a ${scale} ${c.toFixed(2)}ct natural ${gemstone}`;
+  const cleanInput = (prompt || '').trim() || `A bespoke ${style.toLowerCase()} luxury ${category.toLowerCase()} showcasing a ${scale} ${c.toFixed(2)}ct natural ${gemstone}`;
 
   let coreVision = cleanInput;
   if (/multiple lines|lines of|several lines|multi line|multi-line/i.test(coreVision)) {
@@ -94,6 +113,19 @@ export const buildClientEnhancedPrompt = ({
   }
   if (!hasMetal) {
     clauses.push(`crafted in lustrous ${metal} (${metalWeight}g)`);
+  }
+
+  // Multi-object pair symmetry for earrings
+  const isEarring = /earring/i.test(category) || /earring/i.test(coreVision);
+  if (isEarring) {
+    clauses.push(`a perfectly matching identical pair of earrings, matching bilateral symmetry, uniform identical ${gemstone} gemstones on both earrings, strictly uniform color across both earrings`);
+  }
+
+  // Perspective angle directive to prevent flat front-facing stones and show 3D design
+  if (/ring/i.test(category)) {
+    clauses.push('dynamic three-quarter isometric perspective angle view showcasing elevated crown setting, openwork gallery, and band shank profile');
+  } else if (isEarring) {
+    clauses.push('angled three-quarter studio perspective showcasing both matching earrings with dimensional depth');
   }
 
   const styleDirectives = {
@@ -128,7 +160,9 @@ export const generateDesignAndQuote = async (specs, gemImage = null, sketchImage
   form.append('gemstone', specs.gemstone || 'Blue Sapphire');
   form.append('gemstone_weight_ct', String(specs.gemstone_weight_ct || '2.50'));
   form.append('setting_type', 'Prong');
-  form.append('color_grade', 'Royal Blue');
+
+  const colorGrade = resolveColorGrade(specs);
+  form.append('color_grade', colorGrade);
   form.append('stone_grade', 'AA (Fine Jewelry)');
   form.append('treatment', 'Heated');
   form.append('number_of_accent_stones', '0');
@@ -172,4 +206,3 @@ export const generateDesignAndQuote = async (specs, gemImage = null, sketchImage
     timeout: PREDICT_TIMEOUT_MS,
   });
 };
-

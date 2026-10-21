@@ -67,11 +67,7 @@ class GenerationPipelineCoordinator:
             scale_cue = "delicate centerpiece"
 
         if not user_p:
-            from fastapi import HTTPException
-            raise HTTPException(
-                status_code=422,
-                detail="Design prompt is mandatory. User must enter a prompt describing their custom jewelry vision."
-            )
+            user_p = f"A bespoke {aesthetic.lower()} fine jewelry {cat.lower()} showcasing a {scale_cue} natural {gem} handcrafted in lustrous {metal}"
 
         # Normalize raw numbers and units to prevent diffusion model from rendering typography on gemstone
         clean_user_p = re.sub(r"\b\d+(\.\d+)?\s*(ct|carats?|carat)\b", scale_cue, user_p, flags=re.IGNORECASE)
@@ -130,7 +126,16 @@ class GenerationPipelineCoordinator:
         has_metal = bool(re.search(r"gold|silver|platinum", core_vision, re.IGNORECASE))
         has_setting = bool(re.search(r"prong|bezel|pave|channel|halo", core_vision, re.IGNORECASE))
 
-        color_str = f"{request.color_grade} " if request.color_grade else ""
+        # Dynamically sanitize color grade to avoid contradictory color tokens (e.g. "Royal Blue Ceylon Yellow Sapphire")
+        resolved_color = (request.color_grade or "").strip()
+        if not resolved_color:
+            resolved_color = "Vivid Yellow" if "yellow" in gem.lower() else "Royal Blue"
+        elif "yellow" in gem.lower() and "blue" in resolved_color.lower():
+            resolved_color = "Vivid Yellow"
+        elif "blue" in gem.lower() and "yellow" in resolved_color.lower():
+            resolved_color = "Royal Blue"
+
+        color_str = f"{resolved_color} " if resolved_color else ""
         stone_clause = (
             f"highlighting the {scale_cue} {color_str}Ceylon {gem}"
             if has_gem else
@@ -151,12 +156,27 @@ class GenerationPipelineCoordinator:
         ]
 
         clauses = [core_vision]
-        if request.color_grade and request.color_grade.lower() not in core_vision.lower():
+        if resolved_color and resolved_color.lower() not in core_vision.lower():
             clauses.append(stone_clause)
         if setting_clause:
             clauses.append(setting_clause)
         if metal_clause:
             clauses.append(metal_clause)
+
+        # Multi-object bilateral symmetry for earrings
+        if cat.lower() in ["earring", "earrings"] or "earring" in core_vision.lower():
+            clauses.append(f"a perfectly matching pair of identical earrings, matching bilateral symmetry, identical {color_str}{gem} gemstones on both earrings, strictly uniform color across both earrings")
+
+        # 3D Perspective angle directives to reveal full jewelry architecture instead of flat front-facing stones
+        if cat.lower() == "ring":
+            clauses.append("dynamic three-quarter isometric perspective angle view showcasing the elevated crown setting, openwork pavilion gallery rail, goldsmith prongs, and fluid curvature of the ring shank")
+        elif cat.lower() in ["earring", "earrings"] or "earring" in core_vision.lower():
+            clauses.append("angled three-quarter studio perspective showcasing both matching earrings, secure mountings, and dimensional depth")
+        elif cat.lower() == "necklace":
+            clauses.append("three-quarter drape perspective view showcasing pendant focal setting, bail attachment, and chain contour")
+        else:
+            clauses.append("dynamic three-quarter elevated perspective view showcasing three-dimensional jewelry architecture")
+
         if not has_accent_request:
             clauses.append("pure solitaire setting, single solitary centerpiece gemstone only, completely smooth solid metal, strictly zero accent stones, absolutely no side stones, no halo stones, no pave diamonds, no melee gems, no secondary stones")
         clauses.extend(studio_tokens)
@@ -179,11 +199,8 @@ class GenerationPipelineCoordinator:
         pipeline = request.pipeline_option or PipelineOptionEnum.HYBRID
         raw_prompt = (request.prompt or "").strip()
         if not raw_prompt:
-            from fastapi import HTTPException
-            raise HTTPException(
-                status_code=422,
-                detail="Design prompt is mandatory. User must enter a prompt describing their custom jewelry vision."
-            )
+            raw_prompt = f"A bespoke {aesthetic.lower()} fine jewelry {(request.category or 'Ring').lower()} showcasing a natural {request.gemstone or 'Blue Sapphire'} set in lustrous {request.metal or '22KT Gold'}"
+            request.prompt = raw_prompt
         aesthetic = request.aesthetic_style.value if hasattr(request.aesthetic_style, "value") else str(request.aesthetic_style)
 
         # Synthesize base prompt with studio conditioning instructions

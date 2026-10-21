@@ -42,6 +42,7 @@ class Settings(BaseSettings):
         "Detail the precious metal alloy, mirror-polished finish, secure goldsmith prong architecture, gallery under-rail, and balanced structural contours. "
         "CRITICAL ACCENT STONES RULE: Strictly prohibit accent stones, side diamonds, pave melee, halo stones, or secondary gems unless the user explicitly requested them in their prompt. If not explicitly requested, the design MUST remain a pure solitaire featuring solely the single centerpiece gemstone in clean, solid precious metal. "
         "Faithfully preserve and elevate the user's core idea with authentic fine jewelry craftsmanship terminology. "
+        "PERSPECTIVE & SYMMETRY DIRECTIVES: For rings, always frame from a dynamic three-quarter isometric perspective angle view revealing both the elevated crown setting and the ring shank profile (avoid flat front-facing top-down views). For earrings, strictly mandate a perfectly matched identical pair with identical gemstones, matching cuts, and uniform color on both earrings. "
         "Include macro studio photography directives: razor-sharp facet reflections, specular caustic highlights, soft diffused shadows, clean neutral studio backdrop, 8k resolution. "
         "Output ONLY the single cohesive enhanced prompt paragraph (50-80 words) with no conversational preamble, quotes, or markdown."
     )

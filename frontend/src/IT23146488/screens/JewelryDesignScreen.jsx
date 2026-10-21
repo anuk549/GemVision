@@ -41,6 +41,7 @@ import {
   SavedQuoteCard,
 } from '../components';
 import { getCurrentExchangeRate } from '../services/currencyService';
+import { parsePromptSpecifications, detectSpecificationMismatches } from '../utils/promptParser';
 
 const PAGE_SIZE = 4;
 
@@ -58,6 +59,93 @@ export default function JewelryDesignScreen() {
   const [metal, setMetal] = useState(null);
   const [styleAesthetic, setStyleAesthetic] = useState(null);
   const [specsExpanded, setSpecsExpanded] = useState(true);
+  const autoSelectedRef = useRef({});
+
+  // Analyze prompt for fine jewelry attributes and detect specification mismatches
+  const specAnalysis = useMemo(() => {
+    return detectSpecificationMismatches(prompt, {
+      metal,
+      category: jewelryType,
+      gemstone,
+      style: styleAesthetic,
+    });
+  }, [prompt, metal, jewelryType, gemstone, styleAesthetic]);
+
+  const { detected: promptDetectedSpecs, mismatches: specMismatches } = specAnalysis;
+
+  const handleSyncSpec = (field, value) => {
+    if (field === 'metal') {
+      setMetal(value);
+      autoSelectedRef.current.metal = value;
+    } else if (field === 'category') {
+      setJewelryType(value);
+      autoSelectedRef.current.category = value;
+    } else if (field === 'gemstone') {
+      setGemstone(value);
+      autoSelectedRef.current.gemstone = value;
+    } else if (field === 'style') {
+      setStyleAesthetic(value);
+      autoSelectedRef.current.style = value;
+    }
+  };
+
+  const handlePromptChange = (text) => {
+    setPrompt(text);
+    if (promptError) setPromptError('');
+    if (isEnhanced) setIsEnhanced(false);
+
+    // Live Real-Time Auto-Selection from typed prompt
+    const detected = parsePromptSpecifications(text);
+
+    // 1. Category Auto-Selection
+    if (detected.category && (!jewelryType || autoSelectedRef.current.category === jewelryType)) {
+      setJewelryType(detected.category);
+      autoSelectedRef.current.category = detected.category;
+    }
+
+    // 2. Gemstone Auto-Selection
+    if (detected.gemstone && (!gemstone || autoSelectedRef.current.gemstone === gemstone)) {
+      setGemstone(detected.gemstone);
+      autoSelectedRef.current.gemstone = detected.gemstone;
+    }
+
+    // 3. Metal Alloy Auto-Selection
+    if (detected.metal && (!metal || autoSelectedRef.current.metal === metal)) {
+      setMetal(detected.metal);
+      autoSelectedRef.current.metal = detected.metal;
+    }
+
+    // 4. Style Auto-Selection
+    if (detected.style && (!styleAesthetic || autoSelectedRef.current.style === styleAesthetic)) {
+      setStyleAesthetic(detected.style);
+      autoSelectedRef.current.style = detected.style;
+    }
+
+    // 5. Weight Auto-Fill if not manually filled
+    if (detected.carats && !form.values.carats) {
+      form.handleChange('carats')(detected.carats);
+      autoSelectedRef.current.carats = detected.carats;
+    }
+    if (detected.metalWeight && !form.values.metalWeight) {
+      form.handleChange('metalWeight')(detected.metalWeight);
+      autoSelectedRef.current.metalWeight = detected.metalWeight;
+    }
+  };
+
+  const handleSyncAllSpecs = () => {
+    specMismatches.forEach((m) => {
+      handleSyncSpec(m.field, m.promptValue);
+    });
+  };
+
+  const handleAutoFillUnsetSpecs = () => {
+    if (promptDetectedSpecs.metal && !metal) setMetal(promptDetectedSpecs.metal);
+    if (promptDetectedSpecs.category && !jewelryType) setJewelryType(promptDetectedSpecs.category);
+    if (promptDetectedSpecs.gemstone && !gemstone) setGemstone(promptDetectedSpecs.gemstone);
+    if (promptDetectedSpecs.style && !styleAesthetic) setStyleAesthetic(promptDetectedSpecs.style);
+    if (promptDetectedSpecs.carats && !form.values.carats) form.handleChange('carats')(promptDetectedSpecs.carats);
+    if (promptDetectedSpecs.metalWeight && !form.values.metalWeight) form.handleChange('metalWeight')(promptDetectedSpecs.metalWeight);
+  };
 
   // Detect non-sapphire stones mentioned in user prompt for real-time pricing notice
   const detectedNonSapphireGem = useMemo(() => {
@@ -126,30 +214,52 @@ export default function JewelryDesignScreen() {
       return;
     }
 
-    const cleanPrompt = prompt.trim();
+    let cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
-      setPromptError('Please enter a design prompt first before enhancing.');
-      setPopup({
-        visible: true,
-        type: 'error',
-        title: 'Prompt Required',
-        message: 'Please enter your jewelry design idea first so AI can enhance it.',
-      });
-      return;
+      if (jewelryType || gemstone || metal || styleAesthetic) {
+        cleanPrompt = `A bespoke ${(styleAesthetic || 'Modern').toLowerCase()} ${(jewelryType || 'Ring').toLowerCase()} featuring a ${(gemstone || 'Blue Sapphire')} set in ${(metal || '22KT Gold')}`;
+        setPrompt(cleanPrompt);
+      } else {
+        setPromptError('Please enter a design prompt or select jewelry options first.');
+        setPopup({
+          visible: true,
+          type: 'error',
+          title: 'Design Details Needed',
+          message: 'Please enter your jewelry design idea or select your options so AI can enhance it.',
+        });
+        return;
+      }
     }
     setPromptError('');
 
     setEnhancing(true);
     try {
       setOriginalPrompt(prompt);
+
+      // Auto-synchronize any detected attributes from user prompt into options
+      const detected = parsePromptSpecifications(cleanPrompt);
+      const effectiveMetal = detected.metal || metal;
+      const effectiveCategory = detected.category || jewelryType;
+      const effectiveGem = detected.gemstone || gemstone;
+      const effectiveStyle = detected.style || styleAesthetic;
+      const effectiveCarats = form.values.carats || detected.carats || '2.50';
+      const effectiveWeight = form.values.metalWeight || detected.metalWeight || '5.0';
+
+      if (detected.metal && detected.metal !== metal) setMetal(detected.metal);
+      if (detected.category && detected.category !== jewelryType) setJewelryType(detected.category);
+      if (detected.gemstone && detected.gemstone !== gemstone) setGemstone(detected.gemstone);
+      if (detected.style && detected.style !== styleAesthetic) setStyleAesthetic(detected.style);
+      if (detected.carats && !form.values.carats) form.handleChange('carats')(detected.carats);
+      if (detected.metalWeight && !form.values.metalWeight) form.handleChange('metalWeight')(detected.metalWeight);
+
       const enhanced = await enhancePrompt({
         prompt: cleanPrompt,
-        category: jewelryType,
-        gemstone,
-        carats: form.values.carats,
-        metal,
-        metalWeight: form.values.metalWeight,
-        style: styleAesthetic,
+        category: effectiveCategory,
+        gemstone: effectiveGem,
+        carats: effectiveCarats,
+        metal: effectiveMetal,
+        metalWeight: effectiveWeight,
+        style: effectiveStyle,
       });
       setPrompt(enhanced);
       setIsEnhanced(true);
@@ -167,57 +277,30 @@ export default function JewelryDesignScreen() {
 
   const handleGenerate = async () => {
     const cleanPrompt = prompt.trim();
-    if (!cleanPrompt) {
-      setPromptError('Creative vision prompt is mandatory. Please describe your custom jewelry idea.');
+    const hasPrompt = Boolean(cleanPrompt);
+    const hasAllOptions = Boolean(jewelryType && gemstone && metal && styleAesthetic);
+
+    // If user didn't enter a prompt AND didn't select all options
+    if (!hasPrompt && !hasAllOptions) {
       setPopup({
         visible: true,
         type: 'error',
-        title: 'Design Prompt Required',
-        message: 'Please enter a design prompt describing your custom jewelry idea before generating.',
+        title: 'Design Details Needed',
+        message: 'Please either describe your design in the prompt box OR select the jewelry options (Category, Gemstone, Metal, and Style).',
       });
       return;
     }
     setPromptError('');
 
-    if (!jewelryType) {
-      setPopup({
-        visible: true,
-        type: 'error',
-        title: 'Jewelry Type Required',
-        message: 'Please select a jewelry category (Ring, Necklace, Earrings, Bracelet, Pendant).',
-      });
-      return;
-    }
+    // Determine effective options: use explicitly selected option, or detect from prompt, or sensible default
+    const detected = hasPrompt ? parsePromptSpecifications(cleanPrompt) : {};
+    const effectiveCategory = jewelryType || detected.category || 'Ring';
+    const effectiveGemstone = gemstone || detected.gemstone || 'Blue Sapphire';
+    const effectiveMetal = metal || detected.metal || '22KT Gold';
+    const effectiveStyle = styleAesthetic || detected.style || 'Modern';
 
-    if (!gemstone) {
-      setPopup({
-        visible: true,
-        type: 'error',
-        title: 'Center Gemstone Required',
-        message: 'Please select a center gemstone (Blue Sapphire, Yellow Sapphire).',
-      });
-      return;
-    }
-
-    if (!metal) {
-      setPopup({
-        visible: true,
-        type: 'error',
-        title: 'Precious Metal Required',
-        message: 'Please select a precious metal alloy.',
-      });
-      return;
-    }
-
-    if (!styleAesthetic) {
-      setPopup({
-        visible: true,
-        type: 'error',
-        title: 'Design Style Required',
-        message: 'Please select an aesthetic style (Modern, Vintage, Minimal, Royal Halo).',
-      });
-      return;
-    }
+    // If user selected all options and didn't write a prompt, auto-synthesize the prompt
+    const effectivePrompt = cleanPrompt || `A bespoke ${effectiveStyle.toLowerCase()} luxury ${effectiveCategory.toLowerCase()} featuring a natural ${effectiveGemstone} set in lustrous ${effectiveMetal}`;
 
     setGenerating(true);
     setProgress(0.2);
@@ -230,14 +313,14 @@ export default function JewelryDesignScreen() {
       setSampleCounter(nextSample);
 
       const spec = {
-        category: jewelryType,
-        gemstone,
+        category: effectiveCategory,
+        gemstone: effectiveGemstone,
         gemstone_weight_ct: values.carats,
-        metal,
+        metal: effectiveMetal,
         metal_weight_g: values.metalWeight,
-        aesthetic_style: styleAesthetic,
-        style: styleAesthetic,
-        prompt: cleanPrompt,
+        aesthetic_style: effectiveStyle,
+        style: effectiveStyle,
+        prompt: effectivePrompt,
         sample_index: nextSample,
       };
 
@@ -348,11 +431,14 @@ export default function JewelryDesignScreen() {
       title="Jewelry Designer"
       titleColor={colors.emerald}
       headerTop={brandHeader}
+      scroll={false}
     >
       <ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
       >
         {/* Simple & Clear Main Studio Card */}
         <Card style={styles.mainCard}>
@@ -404,13 +490,7 @@ export default function JewelryDesignScreen() {
                 <AppText variant="label" weight="800" color={colors.emerald} style={styles.sectionLabel}>
                   1 DESIGN PROMPT
                 </AppText>
-                {!prompt?.trim() && (
-                  <View style={styles.mandatoryBadge}>
-                    <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                      * REQUIRED
-                    </AppText>
-                  </View>
-                )}
+
               </View>
               <View style={styles.promptHeaderActions}>
                 {prompt.length > 0 && (
@@ -449,18 +529,108 @@ export default function JewelryDesignScreen() {
 
             <Input
               multiline
-              required
               error={promptError}
-              placeholder="Describe your design vision in detail (e.g. A delicate solitaire ring with intertwined flowing botanical vines holding the gemstone securely) *"
+              placeholder="Describe your design vision (e.g. A delicate solitaire ring with intertwined botanical vines holding the gemstone securely)..."
               value={prompt}
-              onChangeText={(text) => {
-                setPrompt(text);
-                if (promptError) setPromptError('');
-                if (isEnhanced) setIsEnhanced(false);
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollTo({ y: 150, animated: true });
+                }, 100);
               }}
+              onChangeText={handlePromptChange}
               style={styles.promptInputWrapper}
               inputStyle={styles.promptTextInput}
             />
+
+            {/* Real-time Auto-Selected Specs Feedback */}
+            {specMismatches.length === 0 && (promptDetectedSpecs.category || promptDetectedSpecs.gemstone || promptDetectedSpecs.metal || promptDetectedSpecs.style) && (
+              <View style={styles.autoSelectedBanner}>
+                <Icon name="sparkles" size={13} color={colors.emerald} />
+                <AppText variant="caption" weight="700" color={colors.emerald} style={{ flex: 1 }}>
+                  Auto-selected from prompt: {[
+                    promptDetectedSpecs.category,
+                    promptDetectedSpecs.gemstone,
+                    promptDetectedSpecs.metal,
+                    promptDetectedSpecs.style
+                  ].filter(Boolean).join(' • ')}
+                </AppText>
+              </View>
+            )}
+
+            {/* Specification Mismatch Warning Banner */}
+            {specMismatches.length > 0 && (
+              <View style={styles.mismatchBanner}>
+                <View style={styles.mismatchHeaderRow}>
+                  <View style={styles.mismatchTitleWrap}>
+                    <Icon name="swap-horizontal" size={17} color="#F59E0B" />
+                    <AppText variant="caption" weight="800" color="#F59E0B">
+                      SPECIFICATION MISMATCH DETECTED
+                    </AppText>
+                  </View>
+                  {specMismatches.length > 1 && (
+                    <Pressable
+                      style={styles.syncAllBtn}
+                      onPress={handleSyncAllSpecs}
+                      hitSlop={8}
+                    >
+                      <AppText variant="caption" weight="800" color={colors.emerald}>
+                        Sync All
+                      </AppText>
+                    </Pressable>
+                  )}
+                </View>
+
+                {specMismatches.map((m) => (
+                  <View key={m.field} style={styles.mismatchItem}>
+                    <AppText variant="caption" color={colors.textMuted} style={styles.mismatchItemText}>
+                      Prompt mentions <AppText variant="caption" weight="700" color={colors.text}>{m.promptValue}</AppText>, but selected is <AppText variant="caption" weight="700" color="#F59E0B">{m.selectedValue}</AppText>.
+                    </AppText>
+                    <Pressable
+                      style={styles.syncItemBtn}
+                      onPress={() => handleSyncSpec(m.field, m.promptValue)}
+                      hitSlop={6}
+                    >
+                      <Icon name="checkmark-circle-outline" size={13} color={colors.emerald} />
+                      <AppText variant="caption" weight="700" color={colors.emerald}>
+                        Select {m.promptValue}
+                      </AppText>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Prompt Detected Quick-Fill Pill Bar (when fields are unselected) */}
+            {specMismatches.length === 0 &&
+              ((!metal && promptDetectedSpecs.metal) ||
+                (!jewelryType && promptDetectedSpecs.category) ||
+                (!gemstone && promptDetectedSpecs.gemstone) ||
+                (!styleAesthetic && promptDetectedSpecs.style)) && (
+                <View style={styles.detectedSpecsBanner}>
+                  <View style={styles.detectedSpecsContent}>
+                    <Icon name="sparkles" size={14} color={colors.emerald} />
+                    <AppText variant="caption" color={colors.textMuted} style={{ flex: 1 }}>
+                      Detected in prompt: {[
+                        promptDetectedSpecs.category,
+                        promptDetectedSpecs.gemstone,
+                        promptDetectedSpecs.metal,
+                        promptDetectedSpecs.style,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </AppText>
+                  </View>
+                  <Pressable
+                    style={styles.autoFillBtn}
+                    onPress={handleAutoFillUnsetSpecs}
+                    hitSlop={6}
+                  >
+                    <AppText variant="caption" weight="700" color={colors.emerald}>
+                      Auto-fill Options
+                    </AppText>
+                  </Pressable>
+                </View>
+              )}
 
             {/* Non-Sapphire Gemstone Pricing Warning */}
             {detectedNonSapphireGem && (
@@ -490,13 +660,7 @@ export default function JewelryDesignScreen() {
                 <AppText variant="label" weight="800" color={colors.emerald} style={styles.sectionLabel}>
                   2. SPECIFICATIONS
                 </AppText>
-                {(!jewelryType || !gemstone || !form.values.carats?.toString().trim() || !metal || !form.values.metalWeight?.toString().trim() || !styleAesthetic) && (
-                  <View style={styles.mandatoryBadge}>
-                    <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                      * REQUIRED
-                    </AppText>
-                  </View>
-                )}
+
               </View>
               <View style={styles.collapseTogglePill}>
                 <AppText variant="caption" weight="700" color={colors.emerald}>
@@ -556,13 +720,7 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
                       JEWELRY TYPE & CATEGORY
                     </AppText>
-                    {!jewelryType && (
-                      <View style={styles.mandatoryBadge}>
-                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                          * REQUIRED
-                        </AppText>
-                      </View>
-                    )}
+
                   </View>
                   <AppText variant="caption" weight="600" color={colors.textMuted} style={styles.fieldLabel}>
                     Select the type of jewelry to craft
@@ -570,7 +728,10 @@ export default function JewelryDesignScreen() {
                   <ChipGroup
                     options={JEWELRY_TYPES}
                     value={jewelryType}
-                    onChange={setJewelryType}
+                    onChange={(val) => {
+                      autoSelectedRef.current.category = null;
+                      setJewelryType(val);
+                    }}
                     color={colors.emerald}
                   />
                 </View>
@@ -582,13 +743,7 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
                       CENTER GEMSTONE
                     </AppText>
-                    {!gemstone && (
-                      <View style={styles.mandatoryBadge}>
-                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                          * REQUIRED
-                        </AppText>
-                      </View>
-                    )}
+
                   </View>
 
                   {/* Option 1: Gemstone Type */}
@@ -598,7 +753,10 @@ export default function JewelryDesignScreen() {
                   <ChipGroup
                     options={GEMSTONE_TYPES}
                     value={gemstone}
-                    onChange={setGemstone}
+                    onChange={(val) => {
+                      autoSelectedRef.current.gemstone = null;
+                      setGemstone(val);
+                    }}
                     color={colors.emerald}
                   />
 
@@ -607,13 +765,7 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="600" color={colors.textMuted}>
                       Carat Weight (ct)
                     </AppText>
-                    {!form.values.carats?.toString().trim() && (
-                      <View style={styles.mandatoryBadge}>
-                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                          * REQUIRED
-                        </AppText>
-                      </View>
-                    )}
+
                   </View>
                   <View style={styles.pillsRow}>
                     {CARAT_PRESETS.map((pill) => (
@@ -646,13 +798,7 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
                       PRECIOUS METAL
                     </AppText>
-                    {!metal && (
-                      <View style={styles.mandatoryBadge}>
-                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                          * REQUIRED
-                        </AppText>
-                      </View>
-                    )}
+
                   </View>
 
                   {/* Option 3: Metal Type */}
@@ -662,7 +808,10 @@ export default function JewelryDesignScreen() {
                   <ChipGroup
                     options={METAL_ALLOYS}
                     value={metal}
-                    onChange={setMetal}
+                    onChange={(val) => {
+                      autoSelectedRef.current.metal = null;
+                      setMetal(val);
+                    }}
                     color={colors.emerald}
                   />
 
@@ -671,13 +820,7 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="600" color={colors.textMuted}>
                       Metal Weight (Grams)
                     </AppText>
-                    {!form.values.metalWeight?.toString().trim() && (
-                      <View style={styles.mandatoryBadge}>
-                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                          * REQUIRED
-                        </AppText>
-                      </View>
-                    )}
+
                   </View>
                   <View style={styles.pillsRow}>
                     {METAL_WEIGHT_PRESETS.map((pill) => (
@@ -710,13 +853,7 @@ export default function JewelryDesignScreen() {
                     <AppText variant="caption" weight="800" color={colors.emerald} style={styles.specCategoryTitle}>
                       DESIGN AESTHETIC & STYLE
                     </AppText>
-                    {!styleAesthetic && (
-                      <View style={styles.mandatoryBadge}>
-                        <AppText variant="caption" weight="800" color="#EF4444" style={styles.mandatoryBadgeText}>
-                          * REQUIRED
-                        </AppText>
-                      </View>
-                    )}
+
                   </View>
                   <AppText variant="caption" weight="600" color={colors.textMuted} style={styles.fieldLabel}>
                     Select aesthetic style to guide generative jewelry creation
@@ -728,7 +865,10 @@ export default function JewelryDesignScreen() {
                       return (
                         <Pressable
                           key={st.value}
-                          onPress={() => setStyleAesthetic(st.value)}
+                          onPress={() => {
+                            autoSelectedRef.current.style = null;
+                            setStyleAesthetic(st.value);
+                          }}
                           style={[
                             styles.styleOptionCard,
                             isSelected && styles.styleOptionCardActive,
@@ -992,6 +1132,95 @@ const styles = StyleSheet.create({
     minHeight: 88,
     fontSize: 14,
     lineHeight: 21,
+  },
+  autoSelectedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(37, 192, 138, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 192, 138, 0.3)',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    marginTop: spacing.xs,
+  },
+  mismatchBanner: {
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  mismatchHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  mismatchTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  mismatchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    paddingVertical: 2,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(245, 158, 11, 0.15)',
+    paddingTop: 4,
+  },
+  mismatchItemText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  syncItemBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(37, 192, 138, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 192, 138, 0.35)',
+  },
+  syncAllBtn: {
+    backgroundColor: 'rgba(37, 192, 138, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  detectedSpecsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(37, 192, 138, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 192, 138, 0.25)',
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  detectedSpecsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flex: 1,
+  },
+  autoFillBtn: {
+    backgroundColor: 'rgba(37, 192, 138, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 192, 138, 0.35)',
   },
   gemWarningBanner: {
     flexDirection: 'row',

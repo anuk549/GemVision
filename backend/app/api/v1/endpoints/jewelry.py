@@ -76,21 +76,19 @@ async def generate_jewelry_design(request: Request):
             except ValueError:
                 pass
 
+        category = form.get("category") or "Ring"
+        metal = form.get("metal") or "22KT Gold"
+        gemstone = form.get("gemstone") or "Blue Sapphire"
+
+        aesthetic_raw = form.get("aesthetic_style") or "Modern"
+        try:
+            aesthetic_enum = AestheticStyleEnum(aesthetic_raw)
+        except ValueError:
+            aesthetic_enum = AestheticStyleEnum.MODERN
+
         user_prompt = (form.get("prompt") or "").strip()
         if not user_prompt:
-            raise HTTPException(status_code=422, detail="Design prompt is mandatory. Please provide a description of your custom jewelry design.")
-
-        category = form.get("category")
-        if not category:
-            raise HTTPException(status_code=422, detail="Jewelry category is mandatory.")
-
-        metal = form.get("metal")
-        if not metal:
-            raise HTTPException(status_code=422, detail="Precious metal alloy is mandatory.")
-
-        gemstone = form.get("gemstone")
-        if not gemstone:
-            raise HTTPException(status_code=422, detail="Gemstone species is mandatory.")
+            user_prompt = f"A bespoke {aesthetic_enum.value.lower()} fine jewelry {category.lower()} featuring a natural {gemstone} set in lustrous {metal}"
 
         try:
             metal_weight_g = float(form.get("metal_weight_g") or 0)
@@ -106,13 +104,7 @@ async def generate_jewelry_design(request: Request):
         except Exception:
             raise HTTPException(status_code=422, detail="Gemstone carat weight (ct) must be at least 0.1 carats.")
 
-        aesthetic_raw = form.get("aesthetic_style")
-        if not aesthetic_raw:
-            raise HTTPException(status_code=422, detail="Design aesthetic style is mandatory.")
-        try:
-            aesthetic_enum = AestheticStyleEnum(aesthetic_raw)
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"Invalid aesthetic style: {aesthetic_raw}")
+        # aesthetic_style already validated above with fallback
 
         req = JewelryDesignRequest(
             category=category,
@@ -121,7 +113,7 @@ async def generate_jewelry_design(request: Request):
             gemstone=gemstone,
             gemstone_weight_ct=gemstone_weight_ct,
             setting_type=form.get("setting_type") or "Prong",
-            color_grade=form.get("color_grade") or "Royal Blue",
+            color_grade=form.get("color_grade") or ("Vivid Yellow" if "yellow" in (gemstone or "").lower() else "Royal Blue"),
             stone_grade=form.get("stone_grade") or "AA (Fine Jewelry)",
             treatment=form.get("treatment") or "Heated",
             number_of_accent_stones=int(form.get("number_of_accent_stones") or 0),
@@ -217,6 +209,7 @@ async def enhance_design_prompt(request: EnhancePromptRequest):
     """
     return await gemini_enhancer.enhance_prompt(
         prompt=request.prompt,
+        category=request.category or "Ring",
         gemstone=request.gemstone or "Blue Sapphire",
         gemstone_weight_ct=request.gemstone_weight_ct or 2.5,
         metal=request.metal or "22KT Gold",

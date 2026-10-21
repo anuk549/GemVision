@@ -28,6 +28,7 @@ class GeminiPromptEnhancer:
     def _build_fallback_prompt(
         self,
         prompt: str,
+        category: str = "Ring",
         gemstone: str = "Blue Sapphire",
         gemstone_weight_ct: float = 2.5,
         metal: str = "22KT Gold",
@@ -121,6 +122,7 @@ class GeminiPromptEnhancer:
     async def enhance_prompt(
         self,
         prompt: str,
+        category: str = "Ring",
         gemstone: str = "Blue Sapphire",
         gemstone_weight_ct: float = 2.5,
         metal: str = "22KT Gold",
