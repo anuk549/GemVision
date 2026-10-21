@@ -33,6 +33,7 @@ import {
 } from '../constants';
 import { enhancePrompt, generateDesignAndQuote } from '../services';
 import {
+  // eslint-disable-next-line no-unused-vars
   CompactUploadCard,
   CraftingAnimationCard,
   DesignShowcaseCard,
@@ -240,12 +241,12 @@ export default function JewelryDesignScreen() {
         sample_index: nextSample,
       };
 
-      // try {
-      //   const result = await generateDesignAndQuote(spec, gemImage, sketchImage);
-      //   return { spec, result };
-      // } finally {
-      //   setProgress(1.0);
-      // }
+      try {
+        const result = await generateDesignAndQuote(spec);
+        return { spec, result };
+      } finally {
+        setProgress(1.0);
+      }
     });
 
     clearTimeout(stepTimer1);
@@ -254,7 +255,7 @@ export default function JewelryDesignScreen() {
 
     if (!outcome?.ok || !outcome?.result) {
       const errorMsg =
-        outcome?.error?.response?.data?.detail ||
+        outcome?.error?.data?.detail ||
         outcome?.error?.message ||
         (outcome?.errors
           ? 'Ensure gemstone carats and metal weight (grams) are valid positive numbers.'
@@ -356,7 +357,7 @@ export default function JewelryDesignScreen() {
         {/* Simple & Clear Main Studio Card */}
         <Card style={styles.mainCard}>
           <AppText variant="body" color={colors.textMuted} style={styles.introText}>
-            Create your custom jewelry. Upload a photo of your gemstone, add a sketch, and describe your vision.
+            Create your custom jewelry.
           </AppText>
 
           {/* SECTION 1: VISUAL UPLOADS (GEM IMAGE & SKETCH) */}

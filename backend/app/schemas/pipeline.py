@@ -16,6 +16,7 @@ class AestheticStyleEnum(str, Enum):
     MINIMAL = "Minimal"
     ART_DECO = "Art Deco"
     SOLITAIRE = "Solitaire"
+    ROYAL_HALO = "Royal Halo"
 
 
 class CanvasStagingRequest(BaseModel):
