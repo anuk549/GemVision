@@ -1,4 +1,4 @@
-# GemVision – Gemstone Identification, Price Prediction and Jewelry Recommendation
+# AI Powered Gemstone Valu and Jewelry Recommendation
 
 ## 1. About the Project
 
