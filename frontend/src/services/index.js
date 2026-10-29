@@ -8,3 +8,9 @@ export {
   imageMimeType,
   toUploadPart,
 } from './detectService';
+export {
+  identifyGemstone,
+  getBackendGemHistory,
+} from './gemClassifierService';
+export { predictSapphirePrice } from './pricingService';
+export { getJewelryRecommendation } from './jewelryService';

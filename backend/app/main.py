@@ -17,13 +17,16 @@ from app.core.exceptions import GemVisionError
 from app.core.logging import configure_logging
 from app.schemas.common import ErrorDetail, ErrorResponse
 from app.services.defect_detector import DefectDetector
+from app.services.gem_classifier import GemClassifier
+from app.services.jewelry_recommender import JewelryRecommender
 from app.services.model_registry import MODEL_SPECS, ModelRegistry
+from app.services.sapphire_pricer import SapphirePricer
 
 logger = logging.getLogger("gemvision")
 
 DESCRIPTION = (
-    "Classifies sapphire gemstone defects (crack, inclusion, normal) with the "
-    "trained Keras models and returns Grad-CAM defect localization."
+    "Classifies sapphire gemstone defects, identifies gemstone types, and predicts "
+    "sapphire prices and jewelry recommendations."
 )
 
 
@@ -37,8 +40,15 @@ def _lifespan(settings: Settings):
         app.state.settings = settings
         app.state.registry = registry
         app.state.detector = DefectDetector(registry)
+        app.state.gem_classifier = GemClassifier(settings)
+        app.state.sapphire_pricer = SapphirePricer(settings)
+        app.state.jewelry_recommender = JewelryRecommender(settings)
 
-        logger.info("Loaded %d/%d model(s)", registry.loaded_count, len(MODEL_SPECS))
+        logger.info(
+            "Loaded %d/%d defect model(s), Gemstone Classifier, Sapphire Pricer, and Jewelry Recommender",
+            registry.loaded_count,
+            len(MODEL_SPECS),
+        )
         yield
         logger.info("Shutting down %s", settings.app_name)
 

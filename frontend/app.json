@@ -12,12 +12,17 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.gemvision.app",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#080B14",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +42,13 @@
           "cameraPermission": "Allow Gemstone Studio to use the camera to photograph gemstones."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9a18def3-b960-405d-8d07-cdfab3e9b3fe"
+      }
+    },
+    "owner": "puladev"
   }
 }

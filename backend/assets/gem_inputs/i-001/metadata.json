@@ -1,0 +1,34 @@
+{
+  "id": "i-001",
+  "folder": "i-001",
+  "raw_class": "other_gemstone",
+  "gem": "Other Gemstone",
+  "confidence": 66.02999877929688,
+  "formatted_prediction": "Prediction: other_gemstone (66.03% confidence)",
+  "can_proceed_to_pricing": false,
+  "probabilities": [
+    {
+      "class": "other_gemstone",
+      "label": "Other Gemstone",
+      "confidence": 66.02999877929688
+    },
+    {
+      "class": "blue_sapphire",
+      "label": "Blue Sapphire",
+      "confidence": 33.95000076293945
+    },
+    {
+      "class": "not_gemstone",
+      "label": "Not a Gemstone",
+      "confidence": 0.009999999776482582
+    },
+    {
+      "class": "yellow_sapphire",
+      "label": "Yellow Sapphire",
+      "confidence": 0.009999999776482582
+    }
+  ],
+  "saved_path": "assets/gem_inputs/i-001/gemstone.jpg",
+  "image_url": "/api/v1/gemstones/images/i-001/gemstone.jpg",
+  "created_at": 1791914879414
+}
